@@ -7,10 +7,11 @@ import * as gqlQueries from './gqlqueries'
 
 const app_variables : types.Variable[] = 
   [
-    { name: 'CATEGORY',   match: 'CATEGORY\\s(\\w+)',   value: "algorithms", default: "algorithms", type: "s"},
-    { name: 'LIMIT',      match: 'LIMIT\\s(\\d+)',      value: 20          , default: 20          , type: "n"},
-    { name: 'SKIP',       match: 'SKIP\\s(\\d+)',       value: 0           , default: 0           , type: "n"},
-    { name: 'DIFFICULTY', match: 'DIFFICULTY\\s(\\w+)', value: "EASY"      , default: "EASY"      , type: "s"}
+    { name: 'CATEGORY',   match: 'CATEGORY\\s(\\w+)',      value: "algorithms", default: "algorithms", type: "s"},
+    { name: 'LIMIT',      match: 'LIMIT\\s(\\d+)',         value: 20          , default: 20          , type: "n"},
+    { name: 'SKIP',       match: 'SKIP\\s(\\d+)',          value: 0           , default: 0           , type: "n"},
+    { name: 'DIFFICULTY', match: 'DIFFICULTY\\s(\\w+)',    value: "EASY"      , default: "ALL"       , type: "s"},
+    { name: 'FOLDER'    , match: 'FOLDER\\s([\\w\\./-]+)', value: './problems', default: "./problems", type: "s"},
   ];
 
 const working_values: string[] = 
@@ -18,7 +19,8 @@ const working_values: string[] =
     "(Possible values: algorithms)",
     "(Possible values: 1...Inf)",
     "(Possible values: 1...Inf)",
-    "(Possible values: Easy, Medium, Hard, All)"
+    "(Possible values: Easy, Medium, Hard, All)",
+    "(Possible values: any folder name)"
   ];
 
 const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean) : RegExp => {
@@ -119,7 +121,106 @@ const DetailCommand = async (data: string[], state: types.AppStateData) : Promis
   return state;
 }
 
+const FetchCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+  const is_by_id = data[2] !== undefined;
+
+  // Two possible ways to fetch the question. The first way is by ID.
+  let problems_data: types.ProblemsData | null = null;
+
+  if (is_by_id) {
+    const category = state.variables[0].value as string;
+    problems_data = await lc.FetchProblems(
+      {category: category, limit: 1, skip: Number.parseInt(data[2])-1},
+      utils.FormatProblemsData, gqlQueries.problemListQuery
+    );
+    
+    if (!problems_data) {
+      console.error(`No problem with ID ${data[2]}`);
+      return state;
+    }
+  } else {
+    const category = state.variables[0].value as string;
+    problems_data = await lc.FetchProblems(
+      {category: category}, utils.FormatProblemsData, gqlQueries.problemListQuery
+    );
+
+    if (!problems_data) return state;
+
+    const selected_problem = problems_data.problemsetQuestionList.filter(
+      (value: types.QuestionGenericData) : boolean => (value.titleSlug === data[1])
+    );
+
+    if (selected_problem.length < 1) {
+      console.error(`No problem with title ${data[1]}`);
+      return state;
+    }
+
+    problems_data.count = 1;
+    problems_data.problemsetQuestionList = selected_problem;
+  }
+
+  utils.PrintProblemsSummary(problems_data);
+
+  // Add the problems to the state
+  if (state.lastSelectedProblems === undefined) {
+    state.lastSelectedProblems = problems_data;
+  } else {
+    state.lastSelectedProblems.problemsetQuestionList.push(problems_data.problemsetQuestionList[0]);
+    state.lastSelectedProblems.count++;
+  }
+
+  return state;
+}
+
 const CreateCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+  // Obtain the problem title from the current state if exists
+  if (state.lastSelectedProblems === undefined) {
+    console.error(
+      "No locally fetched problems. Consider running `fetch` or `list` command" + 
+      "before `create`."
+    );
+    
+    return state;
+  }
+
+  var problem_idxs: number[];
+  const fetch_length = state.lastSelectedProblems.problemsetQuestionList.length;
+
+  if (data[0] !== undefined) {
+    const problem_idx = Number.parseInt(data[0]);
+    if (problem_idx >= fetch_length) {
+      console.error(
+        "Given index exceeds number of locally fetched problems. Consider\n"    +
+        "increasing the `LIMIT` variable and run the `list` command again\n"    +
+        "or directly locally fetching the specified problem either providing\n" + 
+        "the frontend Id or the title-slug."
+      );
+
+      return state;
+    }
+
+    problem_idxs = [problem_idx];
+  } else {
+    problem_idxs = Array.from({ length: fetch_length }, (_, n) => n);
+  }
+
+  var last_question: types.SingleQuestionData|null = null;
+
+  for (let idx = 0; idx < problem_idxs.length; idx++) {
+    const question = await lc.FetchQuestion(
+      state.lastSelectedProblems.problemsetQuestionList[problem_idxs[idx]].titleSlug,
+      utils.FormatQuestionData, gqlQueries.singleProblemQuery
+    );
+
+    last_question = question;
+    
+    if (!question) continue; // If there is no question, continue
+
+    utils.CreateQuestionInstance(last_question, state.variables[4].value as string);
+  }
+
+  state.lastQuestion = (last_question) ? last_question : undefined;
+
   return state;
 }
 
@@ -128,11 +229,20 @@ const ShowCommand = async (data: string[], state: types.AppStateData) : Promise<
   console.log("STATE INFORMATIONS\n------------------");
   console.log("Last Command:", state.lastCommand || "EMPTY");
   console.log("Selected User:", state.selectedUser || "EMPTY");
+  console.log("");
   
   if (state.lastSelectedProblems !== undefined) {
     utils.PrintProblemsSummary(state.lastSelectedProblems);
   } else {
     console.log("Total Problems: EMPTY");
+  }
+
+  console.log("");
+
+  if (state.lastQuestion !== undefined) {
+    utils.PrintQuestionSummary(state.lastQuestion);
+  } else {
+    console.log("Last Question: EMPTY");
   }
   
   console.log("\nVARIABLES\n---------");
@@ -219,11 +329,38 @@ const detail_command: types.AppCommandData = {
         'is not specified, it is intended as IDX not ID.\n'
 }
 
+// Fetch Command - "Download" a single question
+const fetch_command: types.AppCommandData = {
+  name     : 'Fetch Command',
+  command  : 'fetch',
+  syntax   : /^fetch\s+(NAME\s+([\w\-]+)|ID\s+(\d+)){1,}$/,
+  callback : FetchCommand,
+
+  help: 'fetch <NAME|ID> <value> - Fetch locally a single problem from remote. Notice\n'      +
+        'that: NAME is the title-slug which means the real title lower-case and spaces\n'     +
+        'replaced by `-`; ID is the frontend Id, i.e., the number identifying the problem.\n'
+};
+
+// Create Command - "Download" a problem instance locally
+const create_command: types.AppCommandData = {
+  name     : 'Create Command',
+  command  : 'create',
+  syntax   : /^create(?:\s+(\d+))?$/,
+  callback : CreateCommand,
+
+  help: 'create <IDX> - Downloads a problem instance locally given the local index.\n'     +
+        'If the local index exists, it creates a new folder into the `FOLER` folder\n'     +
+        'named `<id>-<titleSlug>`. This folder will contain: a README.md file and a\n'     +
+        'index.html file with the problem description, and the source code file. Errors\n' +
+        'when the input index is out of bound or if the list is empty. If no index is\n'   +
+        'specified, then it will downloads all the fetched problems.\n'
+};
+
 const RegisterCommands = () : types.AppCommandData[] => {
   const commands: types.AppCommandData[] = 
       [
-        help_command, set_command, unset_command, show_command,
-        list_command, detail_command
+        help_command, set_command,    unset_command, show_command,
+        list_command, detail_command, fetch_command, create_command
       ];
 
   return commands;

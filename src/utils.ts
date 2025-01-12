@@ -64,18 +64,28 @@ export const FormatString = (template: string, ...args: any[]): string => {
   return template.replace(/{(\d+)}/g, (match, index) => args[index] || "");
 }
 
-export const CreateQuestionInstance = (question: types.SingleQuestionData | null) => {
+export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {
   // Check if the input data is null
   if (question === null) {
     console.error("Impossible to create problem instance. Input is null.");
     return;
   }
 
+  const question_root_folder = output || OUTPATH;
+
+  // Create also the root folder if it does not exists
+  if (!fs.existsSync(question_root_folder)) {
+    if (fs.mkdirSync(question_root_folder, { recursive: true }) === undefined) {
+      console.error(`Impossible to create root folder: ${question_root_folder}`);
+      return;
+    }
+  }
+
   // Create the problem folder name and file name
   const question_name = question.question.titleSlug;
   const question_id = question.question.questionFrontendId;
   const question_full_name = question_id.toString().concat("-", question_name);
-  const question_folder = join(OUTPATH, question_full_name);
+  const question_folder = join(question_root_folder, question_full_name);
   const question_src = join(question_folder, "solution.py");
   const question_readme = join(question_folder, "README.md");
   const question_html = join(question_folder, "index.html");
@@ -148,4 +158,10 @@ export const PrintProblemsSummary = (problems: types.ProblemsData) => {
         
       console.log(format_str);
     })
+}
+
+export const PrintQuestionSummary = (question: types.SingleQuestionData) => {
+  console.log(FormatString("Last Question: { ID={0}, TitleSlug={1}, Link={2} }",
+    question.question.questionFrontendId, question.question.titleSlug, question.link
+  ));
 }
