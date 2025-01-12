@@ -1,22 +1,32 @@
 {
-  "name": "leetcode",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "leetcode-fetcher-cli",
+  "version": "0.0.3",
   "scripts": {
     "dev": "nodemon --exec ts-node src/main.ts",
-    "app" : "npx ts-node src/main.ts"
+    "app": "npx ts-node src/main.ts",
+    "build": "npx tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "bin": {
+    "lcfetcher": "dist/main.js"
+  },
+  "keywords": [
+    "leetcode",
+    "npm",
+    "cli",
+    "application"
+  ],
+  "author": "lmriccardo",
+  "license": "MIT",
+  "description": "A CLi Application for local fetching of leetcode problems",
+  "dependencies": {
+    "turndown": "^7.2.0"
+  },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.10.5",
     "@types/turndown": "^5.0.5",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
-    "turndown": "^7.2.0",
     "typescript": "^5.7.3"
   }
 }

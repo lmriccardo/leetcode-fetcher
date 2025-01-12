@@ -10,6 +10,11 @@
 ![Node.js](https://img.shields.io/badge/Node.js-%2320232a?style=for-the-badge&logo=node.js&logoColor=43853D)
 ![TypeScript](https://img.shields.io/badge/typetscript-%2320232a.svg?style=for-the-badge&logo=typescript&logoColor=%fff)
 
+<p><strong>NPM Package</strong>: <a href="https://www.npmjs.com/package/leetcode-fetcher-cli">https://www.npmjs.com/package/leetcode-fetcher-cli</a></p>
+<p><strong>Docker Repository</strong>: <a href="https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general">https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general</a></p>
+
+<p><strong>Current Version</strong>: v0.0.3 (Development)</p>
+
 </div>
 
 ## About ✨
@@ -20,6 +25,8 @@ The final result of this need is **leetcode-fetcher**, a simple cli applications
 
 ## Running the App 🚀
 
+### Cloning the repository and install locally
+
 Up to now, to run the application you need first to clone the repository, install all the required node modules and then run. 
 
 ```
@@ -29,13 +36,35 @@ npm install && npm run app
 
 Please, make sure to have node.js and npm installed in your system.
 
+### Using Docker containers
+
 Alternatively, it is possible to run the application using Docker.
 
 ```
 docker run --rm -i -v ./:/leetcode lmriccardo/leetcode-fetcher:latest
 ```
 
-Notice that, the bind mount `-v ./:/leetcode` is **required** to obtain the result on the host machine.
+Notice that, the bind mount `-v ./:/leetcode` is **required** to obtain the result on the host machine. When the application starts, the first command to execute must be
+
+```
+set FOLDER /leetcode
+```
+
+In order to set the correct output folder
+
+### From NPM Packages
+
+The last way to run the cli application is to install it via *npm*
+
+```
+npm i leetcode-fetcher-cli
+```
+
+The command to run the application is just 
+
+```
+lcfetcher
+```
 
 ## How the application works 💻
 

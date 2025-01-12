@@ -1,0 +1,7 @@
+node_modules/
+.github/
+examples/
+problems/
+.gitignore
+Dockerfile
+.dockerignore
