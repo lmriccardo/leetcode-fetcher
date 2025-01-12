@@ -140,7 +140,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   fs.writeFileSync(question_html, question.question.content);
 
   // Log the result
-  console.log("Result written in folder: ", question_folder);
+  console.log("Result written in folder:", question_folder);
 }
 
 export const PrintProblemsSummary = (problems: types.ProblemsData) => {
