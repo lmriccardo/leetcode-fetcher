@@ -1,0 +1,7 @@
+node_modules/
+dist/
+problems/
+examples/
+.gitignore
+LICENSE
+README.md

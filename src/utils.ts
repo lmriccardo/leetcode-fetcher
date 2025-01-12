@@ -127,7 +127,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   const full_source_code = FormatString(source_code, python_header, code_snippet, tests);
 
   // First we need to create the question folder (it should not exist)
-  fs.mkdir(question_folder, 0o700, (err: NodeJS.ErrnoException | null) =>
+  fs.mkdir(question_folder, 0o777, (err: NodeJS.ErrnoException | null) =>
     {
       if (err) console.error("Operation not permitted: ", err);
     });
