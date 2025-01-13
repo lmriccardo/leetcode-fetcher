@@ -1,0 +1,53 @@
+{
+  "lastCommand": "fetch ID 9",
+  "lastSelectedProblems": {
+    "totalQuestions": 3028,
+    "count": 1,
+    "problemsetQuestionList": [
+      {
+        "acRate": 58.26484266377522,
+        "difficulty": "Easy",
+        "freqBar": null,
+        "questionFrontendId": "9",
+        "isFavor": false,
+        "isPaidOnly": false,
+        "status": null,
+        "title": "Palindrome Number",
+        "titleSlug": "palindrome-number",
+        "topicTags": [
+          {
+            "name": "Math",
+            "id": "VG9waWNUYWdOb2RlOjg=",
+            "slug": "math"
+          }
+        ],
+        "hasSolution": true,
+        "hasVideoSolution": true
+      }
+    ]
+  },
+  "lastQuestion": null,
+  "selectedUser": null,
+  "variables": [
+    {
+      "name": "CATEGORY",
+      "value": "algorithms"
+    },
+    {
+      "name": "LIMIT",
+      "value": 10
+    },
+    {
+      "name": "SKIP",
+      "value": 0
+    },
+    {
+      "name": "DIFFICULTY",
+      "value": "EASY"
+    },
+    {
+      "name": "FOLDER",
+      "value": "./examples"
+    }
+  ]
+}

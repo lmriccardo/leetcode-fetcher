@@ -7,17 +7,16 @@ const ShowCommand = async (data: string[], state: types.AppStateData) : Promise<
   console.log("STATE INFORMATIONS\n------------------");
   console.log("Last Command:", state.lastCommand || "EMPTY");
   console.log("Selected User:", state.selectedUser || "EMPTY");
-  console.log("");
   
   if (state.lastSelectedProblems !== undefined) {
+    console.log("");
     utils.PrintProblemsSummary(state.lastSelectedProblems);
   } else {
     console.log("Total Problems: EMPTY");
   }
 
-  console.log("");
-
   if (state.lastQuestion !== undefined) {
+    console.log("");
     utils.PrintQuestionSummary(state.lastQuestion);
   } else {
     console.log("Last Question: EMPTY");
