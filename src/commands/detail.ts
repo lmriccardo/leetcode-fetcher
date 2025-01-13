@@ -1,9 +1,11 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
-import * as gqlQueries from '../gqlqueries';
+import * as gqlQueries from '../queries';
 
-const DetailCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const DetailCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   const is_local = data[1] === 'BYIDX' || data[1] === undefined;
   const problem_id = Number.parseInt(data[0]);
 

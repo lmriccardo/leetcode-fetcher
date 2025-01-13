@@ -5,3 +5,4 @@ examples/
 .gitignore
 LICENSE
 README.md
+.npmrc

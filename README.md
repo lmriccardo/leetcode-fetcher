@@ -13,7 +13,7 @@
 <p><strong>NPM Package</strong>: <a href="https://www.npmjs.com/package/leetcode-fetcher-cli">https://www.npmjs.com/package/leetcode-fetcher-cli</a></p>
 <p><strong>Docker Repository</strong>: <a href="https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general">https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general</a></p>
 
-<p><strong>Current Version</strong>: v0.0.3 (Development)</p>
+<p><strong>Current Version</strong>: v0.0.4 (Development)</p>
 
 </div>
 
@@ -86,6 +86,9 @@ If you type `help` the list with all possible commands will appear. That is, the
 | _Detail_	 | `detail <id/idx> [BYID\|BYIDX]` | Print details about a specified problem. A problem is specified either by local indexing, or remote question IDs.                                                             |
 | _Fetch_  | `fetch <NAME\|ID> <value>`      | Fetch locally a single problem from remote. The problem is specified either using the title-slug or the remote ID.                                                            |
 | _Create_ | `create <idx>`                  | Create a problem instance in the provided target folder (which is a variable). The problem is specified only by the local index which means that must already exists locally. |
+| _Save_   | `save FILEPATH`                 | Saves the current state into a json file                                                                                                                                      |
+| _Load_   | `load FILEPATH`                 | Loads the state from a json file                                                                                                                                              |
+| _Clear_  | `clear`                         | Clears the screen content                                                                                                                                                     |
 
 In order to obtain more informations about the commands, run the `help` command.
 

@@ -1,9 +1,11 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
-import * as gqlQueries from '../gqlqueries';
+import * as gqlQueries from '../queries';
 
-const FetchCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const FetchCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   const is_by_id = data[2] !== undefined;
 
   // Two possible ways to fetch the question. The first way is by ID.

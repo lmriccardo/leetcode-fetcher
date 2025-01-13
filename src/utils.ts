@@ -6,11 +6,16 @@ import * as types from './types'
 
 const OUTPATH : string = "./problems/"; // Define the output folder of the problem instance
 
-export const GetExistingProblems = async (): Promise<string[] | null> => {
+export const GetExistingProblems = async (problem_folder: string): Promise<string[]> => {
   try {
-    var result: string[] | null = null;
+    var result: string[] = [];
 
-    const files = await readdir("./problems", { withFileTypes: true });
+    if (!fs.existsSync(problem_folder)) {
+      console.error(`Folder ${problem_folder} does not exists.`);
+      return [];
+    }
+
+    const files = await readdir(problem_folder, { withFileTypes: true });
     result = files.map((value: fs.Dirent): string => {
       return value.name.split("-")[0];
     });
@@ -19,7 +24,7 @@ export const GetExistingProblems = async (): Promise<string[] | null> => {
 
   } catch (error) {
     console.error("Error reading folder: ", error);
-    return null;
+    return [];
   }
 }
 
@@ -61,7 +66,7 @@ const SaveHtmlToMarkdown = (path: fs.PathOrFileDescriptor, content: string) => {
 }
 
 export const FormatString = (template: string, ...args: any[]): string => {
-  return template.replace(/{(\d+)}/g, (match, index) => args[index] || "");
+  return template.replace(/{(\d+)}/g, (_, index) => args[index] || "");
 }
 
 export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {

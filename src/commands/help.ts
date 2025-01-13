@@ -1,7 +1,9 @@
 import * as types from '../types'
 import * as utils from '../utils'
 
-const HelpCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const HelpCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   // First we need to filter the commands given the input ones
   const filter_result = state.commands.filter(
     (value: types.AppCommandData) : boolean => data.includes(value.command));

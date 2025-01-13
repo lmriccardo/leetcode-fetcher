@@ -10,7 +10,7 @@ const RegisterCommands = () : types.AppCommandData[] => {
       [
         cmds.help_command, cmds.set_command,    cmds.unset_command, cmds.show_command,
         cmds.list_command, cmds.detail_command, cmds.fetch_command, cmds.create_command,
-        cmds.save_command, cmds.load_command
+        cmds.save_command, cmds.load_command,   cmds.clear_command
       ];
 
   return commands;

@@ -1,9 +1,11 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
-import * as gqlQueries from '../gqlqueries';
+import * as gqlQueries from '../queries';
 
-const CreateCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const CreateCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   // Obtain the problem title from the current state if exists
   if (state.lastSelectedProblems === undefined) {
     console.error(
@@ -37,10 +39,16 @@ const CreateCommand = async (data: string[], state: types.AppStateData) : Promis
 
   var last_question: types.SingleQuestionData|null = null;
 
+  // Get already existing problem instances
+  const existing_idxs = await utils.GetExistingProblems(state.variables[4].value as string);
+
   for (let idx = 0; idx < problem_idxs.length; idx++) {
+    const curr_problem = state.lastSelectedProblems.problemsetQuestionList[problem_idxs[idx]];
+    const frontend_id = curr_problem.questionFrontendId;
+    if (existing_idxs.includes(frontend_id)) continue;
+
     const question = await lc.FetchQuestion(
-      state.lastSelectedProblems.problemsetQuestionList[problem_idxs[idx]].titleSlug,
-      utils.FormatQuestionData, gqlQueries.singleProblemQuery
+      curr_problem.titleSlug, utils.FormatQuestionData, gqlQueries.singleProblemQuery
     );
 
     last_question = question;

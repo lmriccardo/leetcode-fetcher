@@ -1,7 +1,9 @@
 import * as types from '../types';
 import { ConstructRegex, app_variables } from './utils';
 
-const UnsetCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const UnsetCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   // If no values are passed then all variables are resetted
   const condition = data.every((x: string) : boolean => (x === undefined));
   if (condition) data = state.variables.map((x: types.Variable) : string => x.name);

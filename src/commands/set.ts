@@ -1,7 +1,9 @@
 import * as types from '../types';
 import { ConstructRegex, app_variables } from './utils';
 
-const SetCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const SetCommand = async (data: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   // Take the variables that are being set by the command
   for (let index = 0; index < data.length; index++) {
     if (data[index] === undefined) continue;

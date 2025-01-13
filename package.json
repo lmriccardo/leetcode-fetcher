@@ -1,6 +1,6 @@
 {
   "name": "leetcode-fetcher-cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "scripts": {
     "dev": "nodemon --exec ts-node src/main.ts",
     "app": "npx ts-node src/main.ts",

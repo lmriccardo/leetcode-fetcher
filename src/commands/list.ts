@@ -1,9 +1,11 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
-import * as gqlQueries from '../gqlqueries';
+import * as gqlQueries from '../queries';
 
-const ListCommand = async (_: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const ListCommand = async (_: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   const category = state.variables[0].value as string; // The category filter
   const limit = state.variables[1].value as number; // The limit filter
   const skip = state.variables[2].value as number; // The skip filter
@@ -34,7 +36,8 @@ const list_command: types.AppCommandData = {
 
   help: 'list - Fetches and Lists a number of problems from leetcode.\n' +
         'Filters and all possible variables are those assigned with\n'   +
-        '`set`, `unset` and shown with `show` commands.\n'
+        '`set`, `unset` and shown with `show` commands. In particular\n' +
+        'filters are: CATEGORY, LIMIT, SKIP and DIFFICULTY\n'
 }
 
 export default list_command;

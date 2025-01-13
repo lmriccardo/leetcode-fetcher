@@ -2,7 +2,9 @@ import * as types from '../types';
 import * as utils from '../utils';
 import { working_values } from './utils';
 
-const ShowCommand = async (data: string[], state: types.AppStateData) : Promise<types.AppStateData> => {
+const ShowCommand = async (_: string[], state: types.AppStateData) 
+  : Promise<types.AppStateData> => 
+{
   // Shows some variables and informations about the state
   console.log("STATE INFORMATIONS\n------------------");
   console.log("Last Command:", state.lastCommand || "EMPTY");
