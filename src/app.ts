@@ -10,7 +10,7 @@ const RegisterCommands = () : types.AppCommandData[] => {
       [
         cmds.help_command, cmds.set_command,    cmds.unset_command, cmds.show_command,
         cmds.list_command, cmds.detail_command, cmds.fetch_command, cmds.create_command,
-        cmds.save_command, cmds.load_command,   cmds.clear_command
+        cmds.save_command, cmds.load_command,   cmds.clear_command, cmds.login_command
       ];
 
   return commands;
@@ -50,12 +50,13 @@ export const RunApp = async () => {
   // Initialize the app state
   let app_state = { commands: commands, variables: app_variables } as types.AppStateData;
 
-  // Create the interface for reading the stdin
-  const rl = createInterface({ input, output });
-
   // Loop indefinitely up until the quit command is not given
   for (; ;) {
+    // Create the interface for reading the stdin
+    const rl = createInterface({ input, output });
     const answer = (await rl.question(">> (Type help for commands): ")).trim();
+    rl.close();
+    
     if (answer.length < 1) continue; // Check that there is a command
 
     // Otherwise execute the command
@@ -65,6 +66,4 @@ export const RunApp = async () => {
       break;
     }
   }
-
-  rl.close();
 }

@@ -73,11 +73,18 @@ export interface Variable {
   type: string;
 };
 
+export interface UserLoginData {
+  username?: string;
+  password?: string; // This string must be hashed
+  salt?: string;
+};
+
 export interface AppStateData {
   lastCommand?: string; // The last executed command
   lastSelectedProblems?: ProblemsData; // Last selected problems
   lastQuestion?: SingleQuestionData; // Last selected question
   selectedUser?: string; // The selected user
+  userLogin?: UserLoginData; // User login data
   commands: AppCommandData[]; // All commands
   variables: Variable[]; // All the App variables
 }

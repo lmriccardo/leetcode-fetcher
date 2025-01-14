@@ -1,29 +1,41 @@
 {
   "name": "leetcode-fetcher-cli",
   "version": "0.0.4",
-  "scripts": {
-    "dev": "nodemon --exec ts-node src/main.ts",
-    "app": "npx ts-node src/main.ts",
-    "build": "npx tsc"
+  "author": "lmriccardo",
+  "license": "MIT",
+  "description": "A CLi Application for local fetching of leetcode problems",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lmriccardo/leetcode-fetcher.git"
   },
-  "bin": {
-    "lcfetcher": "dist/main.js"
-  },
+  "homepage": "https://github.com/lmriccardo/leetcode-fetcher#readme",
   "keywords": [
     "leetcode",
     "npm",
     "cli",
     "application"
   ],
-  "author": "lmriccardo",
-  "license": "MIT",
-  "description": "A CLi Application for local fetching of leetcode problems",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/main.ts",
+    "app": "npx ts-node src/main.ts",
+    "build": "npx tsc",
+    "user": "npx ts-node src/user.ts"
+  },
+  "bin": {
+    "lcfetcher": "dist/main.js"
+  },
   "dependencies": {
-    "turndown": "^7.2.0"
+    "prompt": "^1.3.0",
+    "puppeteer": "^24.0.0",
+    "turndown": "^7.2.0",
+    "colors": "^1.4.0"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
+    "@types/colors": "^1.1.3",
     "@types/node": "^22.10.5",
+    "@types/prompt": "^1.1.9",
+    "@types/puppeteer": "^5.4.7",
     "@types/turndown": "^5.0.5",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",

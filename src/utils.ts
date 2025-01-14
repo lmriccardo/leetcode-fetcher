@@ -1,10 +1,11 @@
 import { readdir } from 'fs/promises';
 import { join } from 'path';
+import { randomBytes, pbkdf2Sync, Hash } from 'crypto';
 import TurndownService from 'turndown'
 import * as fs from 'fs';
 import * as types from './types'
-
-const OUTPATH : string = "./problems/"; // Define the output folder of the problem instance
+import constants from './constants';
+import puppeteer from 'puppeteer';
 
 export const GetExistingProblems = async (problem_folder: string): Promise<string[]> => {
   try {
@@ -76,7 +77,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
     return;
   }
 
-  const question_root_folder = output || OUTPATH;
+  const question_root_folder = output || constants.OUTPATH;
 
   // Create also the root folder if it does not exists
   if (!fs.existsSync(question_root_folder)) {
@@ -169,4 +170,38 @@ export const PrintQuestionSummary = (question: types.SingleQuestionData) => {
   console.log(FormatString("Last Question: { ID={0}, TitleSlug={1}, Link={2} }",
     question.question.questionFrontendId, question.question.titleSlug, question.link
   ));
+}
+
+export const HashPassword = (password: string, salt: string) : string =>
+{
+  const iterations = constants.ITERATIONS;
+  const key_length = constants.KEY_LENGTH;
+  const digest = constants.DIGEST;
+  const hash = pbkdf2Sync(password, salt, iterations, key_length, digest);
+  return hash.toString("hex");
+}
+
+export const VerifyPassword = (password: string, salt: string, original_hash: string) 
+  : boolean =>
+{
+  return HashPassword(password, salt) === original_hash;
+}
+
+export const OpenLoginBrowser = async (username: string, password: string) 
+  : Promise<void> =>
+{
+  const browser = await puppeteer.launch({headless: false, devtools: true, 
+    args: ['--window-size=1080,1024']});
+
+  const page = await browser.newPage();
+  await page.goto(constants.SITES.LOGIN_PAGE.URL);
+  page.setViewport({width: 1080, height: 1024});
+
+  const login_input_u = constants.SITES.LOGIN_PAGE.INPUT_U;
+  const id_input = await page.waitForSelector(login_input_u, {visible: true});
+  await id_input?.type(username);
+  
+  const login_input_p = constants.SITES.LOGIN_PAGE.INPUT_P;
+  const id_password = await page.waitForSelector(login_input_p, {visible: true});
+  await id_password?.type(password);
 }
