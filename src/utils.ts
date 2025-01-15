@@ -1,6 +1,6 @@
 import { readdir } from 'fs/promises';
 import { join } from 'path';
-import { randomBytes, pbkdf2Sync, Hash } from 'crypto';
+import { pbkdf2Sync } from 'crypto';
 import TurndownService from 'turndown'
 import * as fs from 'fs';
 import * as types from './types'
@@ -187,21 +187,20 @@ export const VerifyPassword = (password: string, salt: string, original_hash: st
   return HashPassword(password, salt) === original_hash;
 }
 
-export const OpenLoginBrowser = async (username: string, password: string) 
+export const OpenLoginBrowser = async (cb: types.HttpCallBack) 
   : Promise<void> =>
 {
   const browser = await puppeteer.launch({headless: false, devtools: true, 
     args: ['--window-size=1080,1024']});
 
   const page = await browser.newPage();
+  page.on('response', cb);
+
   await page.goto(constants.SITES.LOGIN_PAGE.URL);
   page.setViewport({width: 1080, height: 1024});
 
-  const login_input_u = constants.SITES.LOGIN_PAGE.INPUT_U;
-  const id_input = await page.waitForSelector(login_input_u, {visible: true});
-  await id_input?.type(username);
-  
-  const login_input_p = constants.SITES.LOGIN_PAGE.INPUT_P;
-  const id_password = await page.waitForSelector(login_input_p, {visible: true});
-  await id_password?.type(password);
+  // Wait until the browser is not closed
+  await new Promise((resolve) => {
+    browser.on('disconnected', resolve);
+  })
 }

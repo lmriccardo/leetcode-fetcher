@@ -1,3 +1,5 @@
+import { HTTPRequest, HTTPResponse } from "puppeteer";
+
 // Questions Data
 type Difficulty = 'All' | 'Easy' | 'Medium' | 'Hard';
 
@@ -98,3 +100,5 @@ export interface AppCommandData {
   help: string; // The helper string
   callback: CommandCallable; // A callback function
 }
+
+export declare type HttpCallBack = (r: HTTPResponse) => Promise<void>;
