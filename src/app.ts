@@ -1,20 +1,9 @@
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
-import { app_variables } from './commands/utils';
+import { app_variables } from './commands/state';
 import * as types from './types';
 import * as utils from './utils';
-import * as cmds from './commands'
-
-const RegisterCommands = () : types.AppCommandData[] => {
-  const commands: types.AppCommandData[] = 
-      [
-        cmds.help_command, cmds.set_command,    cmds.unset_command, cmds.show_command,
-        cmds.list_command, cmds.detail_command, cmds.fetch_command, cmds.create_command,
-        cmds.save_command, cmds.load_command,   cmds.clear_command, cmds.login_command
-      ];
-
-  return commands;
-}
+import commands from './commands'
 
 const ExcuteCommandIfExists = async (
   command: string, state: types.AppStateData, 
@@ -44,9 +33,6 @@ const ExcuteCommandIfExists = async (
 }
 
 export const RunApp = async () => {
-  // First let's register all the commands
-  const commands = RegisterCommands();
-
   // Initialize the app state
   let app_state = { commands: commands, variables: app_variables } as types.AppStateData;
 

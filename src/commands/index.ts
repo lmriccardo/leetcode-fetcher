@@ -1,12 +1,15 @@
-export { default as help_command   } from './help'
-export { default as set_command    } from './set'
-export { default as unset_command  } from './unset'
-export { default as list_command   } from './list'
-export { default as detail_command } from './detail'
-export { default as fetch_command  } from './fetch'
-export { default as create_command } from './create'
-export { default as show_command   } from './show'
-export { default as save_command   } from './save'
-export { default as load_command   } from './load'
-export { default as clear_command  } from './clear'
-export { default as login_command  } from './login'
+import * as types from "../types"
+import * as usr from './user'
+import * as state from './state'
+import * as prob from './problems'
+import * as gen from './generic'
+
+const commands: types.AppCommandData[] =
+  [
+    state.set_command  , state.show_command , state.save_command , 
+    state.load_command , usr.login_command  , prob.list_command  , 
+    prob.fetch_command , prob.detail_command, prob.create_command,
+    gen.help_command   , gen.clear_command,   gen.quit_command
+  ];
+
+export default commands;

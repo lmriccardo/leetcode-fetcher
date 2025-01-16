@@ -174,9 +174,9 @@ export const PrintQuestionSummary = (question: types.SingleQuestionData) => {
 
 export const HashPassword = (password: string, salt: string) : string =>
 {
-  const iterations = constants.ITERATIONS;
-  const key_length = constants.KEY_LENGTH;
-  const digest = constants.DIGEST;
+  const iterations = constants.CRYPTO.ITERATIONS;
+  const key_length = constants.CRYPTO.KEY_LENGTH;
+  const digest = constants.CRYPTO.DIGEST;
   const hash = pbkdf2Sync(password, salt, iterations, key_length, digest);
   return hash.toString("hex");
 }
@@ -187,16 +187,17 @@ export const VerifyPassword = (password: string, salt: string, original_hash: st
   return HashPassword(password, salt) === original_hash;
 }
 
-export const OpenLoginBrowser = async (cb: types.HttpCallBack) 
+export const OpenLoginBrowser = async (res_cb: types.HttpResponseCallBack, req_cb: types.HttpRequestCallBack) 
   : Promise<void> =>
 {
-  const browser = await puppeteer.launch({headless: false, devtools: true, 
-    args: ['--window-size=1080,1024']});
-
+  const browser = await puppeteer.launch({headless: false, args: ['--window-size=1080,1024']});
   const page = await browser.newPage();
-  page.on('response', cb);
 
-  await page.goto(constants.SITES.LOGIN_PAGE.URL);
+  page.setRequestInterception(true);
+  page.on('response', res_cb);
+  page.on('request', req_cb);
+
+  await page.goto(constants.SITES.LOGIN_PAGE.URL, {waitUntil: 'load'});
   page.setViewport({width: 1080, height: 1024});
 
   // Wait until the browser is not closed

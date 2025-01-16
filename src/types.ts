@@ -81,12 +81,19 @@ export interface UserLoginData {
   salt?: string;
 };
 
+export interface LeetcodeSessionCookies {
+  csrftoken?: string;
+  messages?: string;
+  LEETCODE_SESSION?: string;
+}
+
 export interface AppStateData {
   lastCommand?: string; // The last executed command
   lastSelectedProblems?: ProblemsData; // Last selected problems
   lastQuestion?: SingleQuestionData; // Last selected question
   selectedUser?: string; // The selected user
   userLogin?: UserLoginData; // User login data
+  cookies?: LeetcodeSessionCookies; // Leetcode cookies from login
   commands: AppCommandData[]; // All commands
   variables: Variable[]; // All the App variables
 }
@@ -94,6 +101,7 @@ export interface AppStateData {
 export type CommandCallable = (data: string[], state: AppStateData) => Promise<AppStateData>;
 
 export interface AppCommandData {
+  group?: string; // The group name of the command
   name: string; // The name of the command
   command: string; // The actual command
   syntax: RegExp; // The syntax of the command
@@ -101,4 +109,5 @@ export interface AppCommandData {
   callback: CommandCallable; // A callback function
 }
 
-export declare type HttpCallBack = (r: HTTPResponse) => Promise<void>;
+export declare type HttpResponseCallBack = (r: HTTPResponse) => Promise<void>;
+export declare type HttpRequestCallBack = (r: HTTPRequest) => Promise<void>;

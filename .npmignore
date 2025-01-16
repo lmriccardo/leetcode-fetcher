@@ -6,3 +6,4 @@ problems/
 Dockerfile
 .dockerignore
 .npmrc
+prova/
