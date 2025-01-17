@@ -1,9 +1,9 @@
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
-import { app_variables } from './commands/state';
 import * as types from './types';
 import * as utils from './utils';
 import commands from './commands'
+import constants from './constants';
 
 const ExcuteCommandIfExists = async (
   command: string, state: types.AppStateData, 
@@ -34,7 +34,7 @@ const ExcuteCommandIfExists = async (
 
 export const RunApp = async () => {
   // Initialize the app state
-  let app_state = { commands: commands, variables: app_variables } as types.AppStateData;
+  let app_state = { commands: commands, variables: constants.APP.APP_VARIABLES } as types.AppStateData;
 
   // Loop indefinitely up until the quit command is not given
   for (; ;) {

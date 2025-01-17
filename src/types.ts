@@ -73,7 +73,13 @@ export interface Variable {
   value: string | number; 
   default: string | number;
   type: string;
+  desc: string,
+  values: string
 };
+
+export type Variables = {
+  [key: string] : Variable;
+}
 
 export interface UserLoginData {
   username?: string;
@@ -95,7 +101,7 @@ export interface AppStateData {
   userLogin?: UserLoginData; // User login data
   cookies?: LeetcodeSessionCookies; // Leetcode cookies from login
   commands: AppCommandData[]; // All commands
-  variables: Variable[]; // All the App variables
+  variables: Variables; // All the App variables
 }
 
 export type CommandCallable = (data: string[], state: AppStateData) => Promise<AppStateData>;

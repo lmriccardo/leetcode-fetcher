@@ -9,28 +9,12 @@
  *  - show  [Shows the current state (non-sensitive information)]
  */
 
+import prompt from 'prompt';
 import * as types from '../types';
 import * as utils from '../utils';
 import * as fs from 'fs';
 import * as path from 'path'
-
-export const app_variables: types.Variable[] =
-  [
-    { name: 'CATEGORY', match: 'CATEGORY\\s(\\w+)', value: "algorithms", default: "algorithms", type: "s" },
-    { name: 'LIMIT', match: 'LIMIT\\s(\\d+)', value: 20, default: 20, type: "n" },
-    { name: 'SKIP', match: 'SKIP\\s(\\d+)', value: 0, default: 0, type: "n" },
-    { name: 'DIFFICULTY', match: 'DIFFICULTY\\s(\\w+)', value: "EASY", default: "ALL", type: "s" },
-    { name: 'FOLDER', match: 'FOLDER\\s([\\w\\./-]+)', value: './problems', default: "./problems", type: "s" },
-  ];
-
-const working_values: string[] =
-  [
-    "(Possible values: algorithms)",
-    "(Possible values: 1...Inf)",
-    "(Possible values: 1...Inf)",
-    "(Possible values: Easy, Medium, Hard, All)",
-    "(Possible values: any folder name)"
-  ];
+import constants from '../constants';
 
 const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean): RegExp => {
   const prefix = utils.FormatString("^{0}", name);
@@ -46,10 +30,12 @@ const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean): 
 const SetCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => {
   // Take the variables that are being set by the command
+  const keys = Object.keys(state.variables);
   for (let index = 0; index < data.length; index++) {
     if (data[index] === undefined) continue;
-    const _type = state.variables[index].type;
-    state.variables[index].value = (_type === "s") ? data[index]
+    const key = keys[index];
+    const _type = state.variables[key].type;
+    state.variables[key].value = (_type === "s") ? data[index]
       : Number.parseInt(data[index]);
   }
 
@@ -61,7 +47,7 @@ export const set_command: types.AppCommandData = {
   group: 'State',
   name: 'Set Command',
   command: 'set',
-  syntax: ConstructRegex('set', app_variables),
+  syntax: ConstructRegex('set', Object.values(constants.APP.APP_VARIABLES)),
   callback: SetCommand,
 
   help: 'set [VAR <value> ...] - Sets the value of a specific variable.\n' +
@@ -75,11 +61,11 @@ const UnsetCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => {
   // If no values are passed then all variables are resetted
   const condition = data.every((x: string): boolean => (x === undefined));
-  if (condition) data = state.variables.map((x: types.Variable): string => x.name);
+  if (condition) data = Object.keys(state.variables);
 
-  for (let index = 0; index < data.length; index++) {
-    if (data[index] === undefined) continue;
-    state.variables[index].value = state.variables[index].default;
+  for (let key in data) {
+    if (key === undefined) continue;
+    state.variables[key].value = state.variables[key].default;
   }
 
   return state;
@@ -90,7 +76,7 @@ export const unset_command: types.AppCommandData = {
   group: 'State',
   name: 'Unset Command',
   command: 'unset',
-  syntax: ConstructRegex('unset', app_variables, true),
+  syntax: ConstructRegex('unset', Object.values(constants.APP.APP_VARIABLES), true),
   callback: UnsetCommand,
 
   help: 'unset [VAR1 VAR2 ...] - Unset a variable by bringing back to its\n' +
@@ -105,15 +91,45 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
     return state;
   }
 
+  // Check if the flag to save also the login credentials is true
+  let cookies = null;
+  let userLogin = null;
+  
+  if (state.variables['SAVE_LOGIN'].value === 1 && state.userLogin !== undefined) {
+    let attemps = constants.CRYPTO.AUTH_ATTEMPTS;
+    prompt.message = '';
+    prompt.delimiter = '';
+
+    while (attemps > 0) {
+      try {
+        prompt.start({noHandleSIGINT: true});
+        const { password } = await prompt.get(constants.PROMPT.VALIDATION_SCHEMA);
+        const validation_result = utils.VerifyPassword(
+          password as string, state.userLogin.salt!, state.userLogin.password!)
+        
+        if (validation_result) {
+          cookies = state.cookies;
+          userLogin = state.userLogin;
+          break;
+        }
+      } catch (error) {
+      }
+      attemps--;
+    }
+  } else {
+    cookies = state.cookies;
+    userLogin = state.userLogin;
+  }
+
   // Select the data to save into the json file
   const content_data = {
     lastCommand: state.lastCommand || null,
     lastSelectedProblems: state.lastSelectedProblems || null,
     lastQuestion: state.lastQuestion || null,
     selectedUser: state.selectedUser || null,
-    userLogin: state.userLogin || null,
-    cookies: state.cookies || null,
-    variables: state.variables.map((x: types.Variable)
+    userLogin: userLogin || null,
+    cookies: cookies || null,
+    variables: Object.values(state.variables).map((x: types.Variable)
       : { name: string, value: string | number } => (
       {
         name: x.name,
@@ -181,8 +197,8 @@ const LoadCommand = async (data: string[], state: types.AppStateData)
   state.userLogin = IfNullUndefined(content_data.userLogin);
   state.cookies = IfNullUndefined(content_data.cookies);
 
-  for (let i = 0; i < state.variables.length; i++) {
-    state.variables[i].value = content_data.variables[i].value;
+  for (let key in Object.keys(state.variables)) {
+    state.variables[key].value = content_data.variables[key].value;
   }
 
   console.log("Loaded state from:", filename);
@@ -224,9 +240,9 @@ const ShowCommand = async (_: string[], state: types.AppStateData)
   }
   
   console.log("\nVARIABLES\n---------");
-  state.variables.forEach((value: types.Variable, idx: number) => {
-    console.log(utils.FormatString("{0} => {1} {2}",  value.name, 
-      value.value.toString(), working_values[idx]));
+  Object.values(state.variables).forEach((value: types.Variable, idx: number) => {
+    console.log(utils.FormatString("{0} => {1} <{2} ({3})>",  value.name, 
+      value.value.toString(), value.desc, value.values));
   });
 
   console.log("");

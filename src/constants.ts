@@ -1,10 +1,12 @@
 import prompt from "prompt";
+import * as types from './types'
 
 const constants = {
   CRYPTO: {
     ITERATIONS: 1000,
     KEY_LENGTH: 64,
-    DIGEST: 'sha512'
+    DIGEST: 'sha512',
+    AUTH_ATTEMPTS: 3
   },
   OUTPATH: "./problems",
   SITES : {
@@ -35,9 +37,6 @@ const constants = {
       }
     } as prompt.Schema
   },
-  COMMANDS: {
-    GROUPS: ['Generic', 'Problems', 'State', 'User']
-  },
   // Thanks to: https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json
   SPINNER: {
     BOUNCING_BALL: {
@@ -55,6 +54,67 @@ const constants = {
         "( ●    )"
       ]
     }
+  },
+  APP : {
+    COMMANDS: {
+      GROUPS: ['Generic', 'Problems', 'State', 'User']
+    },
+    APP_VARIABLES: {
+      CATEGORY : { 
+        name    : 'CATEGORY', 
+        match   : 'CATEGORY\\s(\\w+)', 
+        value   : "algorithms", 
+        default : "algorithms", 
+        type    : "s",
+        desc    : 'The category filter when listing problems',
+        values  : '[algorithms]' 
+      },
+      LIMIT : {
+        name    : 'LIMIT', 
+        match   : 'LIMIT\\s(\\d+)', 
+        value   : 20, 
+        default : 20, 
+        type    : "n",
+        desc    : 'Maximum number of problems to list',
+        values  : '[1...Inf]'
+      },
+      SKIP : {
+        name    : 'SKIP', 
+        match   : 'SKIP\\s(\\d+)', 
+        value   : 0, 
+        default : 0, 
+        type    : "n",
+        desc    : 'Skip a number of initial problems',
+        values  : '[1...Inf]'
+      },
+      DIFFICULTY : {
+        name    : 'DIFFICULTY', 
+        match   : 'DIFFICULTY\\s(\\w+)', 
+        value   : "EASY", 
+        default : "ALL", 
+        type    : "s",
+        desc    : 'The difficulty selection',
+        values  : '[Easy, Medium, Hard, All]'
+      },
+      FOLDER : {
+        name    : 'FOLDER', 
+        match   : 'FOLDER\\s([\\w\\./-]+)', 
+        value   : './problems', 
+        default : "./problems", 
+        type    : "s",
+        desc    : 'The output folder where problems will be created',
+        values  : 'Any folder name'
+      },
+      SAVE_LOGIN : {
+        name    : 'SAVE_LOGIN',
+        match   : 'SAVE\\_LOGIN\\s(1|0)',
+        value   : 0,
+        default : 0,
+        type    : 'n',
+        desc    : 'If true, user credentials and session saved into the json',
+        values  : '[0,1]'
+      }
+    } as types.Variables
   }
 }
 
