@@ -18,15 +18,17 @@ const ListCommand = async (_: string[], state: types.AppStateData)
   const category = state.variables["CATEGORY"].value as string; // The category filter
   const limit = state.variables["LIMIT"].value as number; // The limit filter
   const skip = state.variables["SKIP"].value as number; // The skip filter
-  let difficulty = (state.variables["DIFFICULTY"].value as string).toUpperCase();
-  if (difficulty === "ALL") difficulty = ""; 
+  const difficulty = (state.variables["DIFFICULTY"].value as string).toUpperCase();
+
+  var diff_filter: string | undefined = difficulty;
+  if (difficulty === "ALL") diff_filter = undefined;
 
   const problems_data = await lc.FetchProblemList(
     {
       categorySlug: category, 
       limit: limit, 
       skip: skip, 
-      filters: {difficulty}
+      filters: {diff_filter}
     }
   );
 
@@ -67,9 +69,10 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
     
     problems_data = await lc.FetchProblemList(
       {
-        category: category, 
+        categorySlug: category, 
         limit: 1, 
-        skip: Number.parseInt(data[2])-1
+        skip: Number.parseInt(data[2])-1,
+        filters: {}
       }
     );
     
@@ -79,7 +82,13 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
     }
   } else {
     const category = state.variables["CATEGORY"].value as string;
-    problems_data = await lc.FetchProblemList({category: category});
+    problems_data = await lc.FetchProblemList(
+      {
+        categorySlug: category, 
+        limit: state.lastSelectedProblems?.totalQuestions ?? 100,
+        skip: 0,
+        filters: {}
+      });
 
     if (!problems_data) return state;
 
@@ -135,9 +144,8 @@ const DetailCommand = async (data: string[], state: types.AppStateData)
   }
 
   // Otherwise, fetch using the API
-  const category = state.variables["CATEGORY"].value as string;
   const problems_data = await lc.FetchProblemList(
-    {category: category, limit: 1, skip: problem_id-1}
+    {categorySlug: "", limit: 1, skip: problem_id-1, filters: {}}
   );
 
   if (problems_data) console.log(problems_data.problemsetQuestionList[0]);

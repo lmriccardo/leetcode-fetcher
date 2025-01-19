@@ -1,5 +1,6 @@
 import prompt from "prompt";
 import * as types from './types'
+import chalk from "chalk";
 
 const constants = {
   CRYPTO: {
@@ -119,7 +120,7 @@ const constants = {
       DIFFICULTY : {
         name    : 'DIFFICULTY', 
         match   : 'DIFFICULTY\\s(\\w+)', 
-        value   : "EASY", 
+        value   : "ALL", 
         default : "ALL", 
         type    : "s",
         desc    : 'The difficulty selection',
@@ -143,7 +144,16 @@ const constants = {
         desc    : 'If true, user credentials and session saved into the json',
         values  : '[0,1]'
       }
-    } as types.Variables
+    } as types.Variables,
+    SHORT_SUBMISSION: {
+      COLS: ['ID', 'Title', 'Question ID', 'Timestamp', 'Language', 'Runtime', 'Memory'],
+      STYLES: [
+        chalk.yellowBright, undefined, chalk.yellowBright, 
+        chalk.cyanBright, chalk.magentaBright, chalk.greenBright, 
+        chalk.greenBright
+      ],
+      JUST: [0, 1, 0, 0, 0, 0, 0]
+    }
   }
 }
 

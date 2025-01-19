@@ -14,6 +14,12 @@ const ascii: {[k: string]: string} =
 
 declare type ColumnProperties = {size: number, style?: (x: string) => string, just?: number};
 
+function getVisibleTextLength(input: string) {
+  // Regular expression to remove ANSI escape sequences
+  const strippedText = input.replace(/\x1b\]8;;.*?\x1b\\|\x1b\]8;;\x1b\\/g, '');
+  return strippedText.length;
+}
+
 class TablePrinter {
   private ncols: number = 0;
   private nrows: number = 0;
@@ -22,8 +28,9 @@ class TablePrinter {
   private padding: number[] = [2, 3, 2];
   private rows: (string|number)[][] = [];
   private rowsizes: number[] = [];
+  private title: string;
 
-  constructor(cols?: string[], props?: ColumnProperties[]) {
+  constructor(title?: string, cols?: string[], props?: ColumnProperties[]) {
     if (cols !== undefined && props !== undefined) {
       if (cols.length !== props.length) {
         console.error(chalk.redBright("Not enough properties or columns"));
@@ -38,10 +45,13 @@ class TablePrinter {
         just: x.just || 0
       }));
     }
+
+    this.title = title ?? "";
   }
 
   private getContentSize(content: string|number) : number {
-    return (typeof content == "string") ? content.length : content.toString().length
+    return (typeof content == "string") ? getVisibleTextLength(content) 
+      : getVisibleTextLength(content.toString())
   }
 
   private getRowVerticalSize(content: (string|number)[]) : number {
@@ -135,6 +145,12 @@ class TablePrinter {
     this.nrows += vsize;
   }
 
+  getWidth() : number {
+    const sizes = this.cprops.map((x) => x.size);
+    return utils.ArraySum(...sizes) + 2 * this.padding[0] 
+      + this.padding[1] * (this.ncols - 1);
+  }
+
   toString() : string {
     const formatBasicLine = (start: string, end: string, sep1: string, sep2: string)
       : string =>
@@ -160,8 +176,15 @@ class TablePrinter {
     const content = formatted_rows.join(`\n${t_middle}\n`);
     const header  = this.contentToString(this.columns, true);
 
+    let title_str = "";
+    if (this.title.length > 0) {
+      const table_size = this.getWidth();
+      const title = utils.JustifyString(this.title, table_size, 0);
+      title_str = `${chalk.bold(title)}\n`;
+    }
+
     // Formats the table
-    const table = `${t_upper}\n${header}\n${t_middle}\n${content}\n${t_lower}`
+    const table = `${title_str}${t_upper}\n${header}\n${t_middle}\n${content}\n${t_lower}`
     return table;
   }
 };

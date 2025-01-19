@@ -1,13 +1,15 @@
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { pbkdf2Sync } from 'crypto';
+import { TablePrinter, RectangleBox } from './pprint';
 import TurndownService from 'turndown'
-import * as fs from 'fs';
-import * as types from './types'
 import constants from './constants';
 import puppeteer from 'puppeteer';
 import prompt from 'prompt';
 import chalk from 'chalk';
+import * as fs from 'fs';
+import * as types from './types'
+import * as lc from './leetcode'
 
 export const GetExistingProblems = async (problem_folder: string): Promise<string[]> => {
   try {
@@ -62,6 +64,39 @@ export const FormatProblemsData = (data: types.ProblemsetQuestionListData)
   }
 );
 
+export const FormatUserData = (user: types.MatchedUser, lstats: types.UserLanguageStats,
+  subList: types.SubmissionList, acSubList: types.SubmissionList) : types.User => (
+  {
+    profile: {
+      username: user!.matchedUser.username,
+      realName: user!.matchedUser.profile.realName,
+      aboutMe: user!.matchedUser.profile.aboutMe,
+      reputation: user!.matchedUser.profile.reputation,
+      ranking: user!.matchedUser.profile.ranking,
+      githubUrl: user!.matchedUser.githubUrl,
+      twitterUrl: user!.matchedUser.twitterUrl,
+      linkedinUrl: user!.matchedUser.linkedinUrl,
+      websites: user!.matchedUser.profile.websites,
+      skillTags: user!.matchedUser.profile.skillTags
+    },
+    submitStats: user!.matchedUser.submitStats,
+    langStats: lstats!.matchedUser.languageProblemCount,
+    subList: subList,
+    acSubList: acSubList
+  }
+)
+
+export const FormatShortSubmissionDetails = (details: types.SubmissionDetails)
+  : types.ShortSubmissionDetailsData =>
+(
+  {
+    runtimeDisplay: details.submissionDetails?.runtimeDisplay,
+    memoryDisplay: details.submissionDetails?.memoryDisplay,
+    question: details.submissionDetails?.question,
+    lang: details.submissionDetails?.lang
+  }
+);
+
 const SaveHtmlToMarkdown = (path: fs.PathOrFileDescriptor, content: string) => {
   // Initialize turndown service and convert
   const markdown = (new TurndownService()).turndown(content);
@@ -106,6 +141,10 @@ export const JustifyString = (str: string, width: number, dir: number): string =
   if (dir == -1) return ((remaining_size) ? ' '.repeat(width - str.length) : '') + str;
   return str;
 }
+
+export const TimestampToDate = (timestamp: number) : string => (
+  (new Date(timestamp * 100)).toISOString()
+)
 
 export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {
   // Check if the input data is null
@@ -266,4 +305,104 @@ export const RequestPassword = async (credentials: types.UserLoginData)
   }
 
   return false;
+}
+
+const PrintSubmissionStats = (submitStats: types.UserSubmitStats) => 
+{
+  const total_subs = submitStats?.totalSubmissionNum;
+  const acc_subs = submitStats?.acSubmissionNum;
+
+  if (total_subs !== undefined && total_subs.length > 0 ) {
+    const difficulties = total_subs.map((x) => x.difficulty);
+    const columns = ['Difficulty', ...difficulties];
+    const columns_props = Array(difficulties.length).fill({size: 10, style: chalk.yellowBright});
+    const props = [{size: 12}, ...columns_props];
+    const tsubs_table = new TablePrinter("Total Submissions Count", columns, props);
+
+    const counts = ['Count', ...total_subs.map((x) => x.count)];
+    const subnum = ['Submissions', ...total_subs.map((x) => x.submissions)];
+    const accepted = ['Accepted', ...acc_subs!.map((x) => x.submissions)];
+    tsubs_table.pushRow(...counts);
+    tsubs_table.pushRow(...subnum);
+    tsubs_table.pushRow(...accepted);
+
+    console.log()
+    console.log(tsubs_table.toString());
+    console.log() 
+  }
+}
+
+const PrintShortSubmissionsDetails = (submissions: types.SubmissionList) =>
+{
+  // For an optimal columns size, we should take the maximum between all sizes
+  const sublist = submissions.submissionList;
+  if (sublist.length < 1) return;
+
+  const columns = constants.APP.SHORT_SUBMISSION.COLS;
+  const colsizes = Array.from({length: columns.length}, (_, i) => columns[i].length);
+
+  sublist.forEach((x: types.ShortSubmission) =>
+  {
+    const question_id_len = x.question?.questionId.length ?? 0;
+    const lang_len = x.lang?.verboseName.length ?? 0;
+    const runtime_len = x.runtimeDisplay?.length ?? 0;
+    const memory_len = x.memoryDisplay?.length ?? 0;
+    const timestamp = TimestampToDate(Number.parseInt(x.timestamp));
+
+    colsizes[0] = Math.max(colsizes[0], x.id.length);
+    colsizes[1] = Math.max(colsizes[1], x.title.length);
+    colsizes[2] = Math.max(colsizes[2], question_id_len);
+    colsizes[3] = Math.max(colsizes[3], timestamp.length);
+    colsizes[4] = Math.max(colsizes[4], lang_len);
+    colsizes[5] = Math.max(colsizes[5], runtime_len);
+    colsizes[6] = Math.max(colsizes[6], memory_len);
+  });
+
+  const properties = colsizes.map((x, i) => (
+    {
+      size: x,
+      style: constants.APP.SHORT_SUBMISSION.STYLES[i],
+      just: constants.APP.SHORT_SUBMISSION.JUST[i]
+    }
+  ));
+
+  const table = new TablePrinter("Recent Accepted Submissions", columns, properties);
+
+  sublist.forEach((x: types.ShortSubmission) =>
+  {
+    const question_id = x.question?.questionId ?? "null";
+    const lang = x.lang?.verboseName ?? "null";
+    const runtime = x.runtimeDisplay ?? "null";
+    const memory = x.memoryDisplay ?? "null";
+    const timestamp = TimestampToDate(Number.parseInt(x.timestamp));
+
+    table.pushRow(x.id, x.title, question_id, timestamp, lang, runtime, memory);
+  })
+
+  console.log()
+  console.log(table.toString());
+  console.log()
+}
+
+export const PrintUserSummary = (user: types.User) => {
+  console.log(`${chalk.bold("Username")}   : ${chalk.blueBright(user.profile?.username)}`);
+  console.log(`${chalk.bold("Real Name")}  : ${chalk.gray(user.profile?.realName)}`);
+  
+  if (user.profile?.aboutMe !== undefined && user.profile?.aboutMe !== "") {
+    const about_box = new RectangleBox(80, 0, chalk.italic);
+    about_box.setTitle("About Me", 4);
+    about_box.setContent(user.profile?.aboutMe, {upad: 1, dpad: 1, lpad: 2, rpad: 2});
+    console.log()
+    console.log(about_box.toString());
+    console.log()
+  }
+
+  console.log(`${chalk.bold("Reputation")} :`, user.profile?.reputation);
+  console.log(`${chalk.bold("Ranking")}    :`, user.profile?.ranking);
+  console.log(`${chalk.bold("Github")}     :`, chalk.underline(user.profile?.githubUrl));
+  console.log(`${chalk.bold("Twitter")}    :`, chalk.underline(user.profile?.twitterUrl));
+  console.log(`${chalk.bold("Linkedin")}   :`, chalk.underline(user.profile?.linkedinUrl));
+
+  PrintSubmissionStats(user.submitStats!);
+  PrintShortSubmissionsDetails(user.acSubList!);
 }

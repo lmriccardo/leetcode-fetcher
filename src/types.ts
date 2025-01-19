@@ -80,7 +80,7 @@ interface UserProfile {
   solutionCount?: number
 }
 
-interface UserSubmitStats {
+export interface UserSubmitStats {
   totalSubmissionNum : {difficulty: string, count: number, submissions: number}[];
   acSubmissionNum : {difficulty: string, count: number, submissions: number}[];
 }
@@ -104,16 +104,49 @@ export interface UserLanguageStats {
   }
 }
 
-export interface RecentSubmissionList {
-  recentSubmissionList : {
-    id: string,
-    title: string,
-    titleSlug: string,
-    timestamp: string,
-    statusDisplay: string,
-    lang: string
-  }[];
+export interface ShortSubmissionDetailsData {
+  runtimeDisplay?: string,
+  memoryDisplay?: string,
+  question?: {questionId: string},
+  lang?: {name: string, verboseName: string}
+}
+
+export interface SubmissionDetailsData extends ShortSubmissionDetailsData {
+  runtimePercentile?: number,
+  runtimeDistribution?: string,
+  memoryPercentile?: number,
+  memoryDistribution?: string,
+  timestamp?: number,
+  code?: string,
+  statusCode?: number,
+  user?: {username: string}
 };
+
+export interface SubmissionDetails {
+  submissionDetails?: SubmissionDetailsData;
+}
+
+export interface SubmissionData {
+  id: string,
+  title: string,
+  titleSlug: string,
+  timestamp: string,
+  statusDisplay: string
+}
+
+export interface RecentSubmissionList {
+  recentSubmissionList : (SubmissionData & {lang: string})[];
+};
+
+export interface RecentAcSubmissionList {
+  recentAcSubmissionList : (SubmissionData & {lang: string})[];
+};
+
+export declare type ShortSubmission = SubmissionData & ShortSubmissionDetailsData;
+
+export interface SubmissionList {
+  submissionList: ShortSubmission[];
+}
 
 interface CompleteUserProfile extends UserProfile {
   username: string,
@@ -126,8 +159,8 @@ export interface User {
   profile?: CompleteUserProfile,
   submitStats?: UserSubmitStats,
   langStats?: LanguageProblemCount,
-  subList?: RecentSubmissionList,
-  acSubList?: RecentSubmissionList
+  subList?: SubmissionList,
+  acSubList?: SubmissionList
 }
 
 export interface Variable {
@@ -182,7 +215,7 @@ export interface AppCommandData {
 export declare type HttpResponseCallBack = (r: HTTPResponse) => Promise<void>;
 export declare type HttpRequestCallBack = (r: HTTPRequest) => Promise<void>;
 
-type QVariable = string | number | undefined | string[] | Record<string,string>;
+type QVariable = string | number | undefined | string[] | Record<string,string|undefined>;
 export type QueryVariables = {
   [key: string] : QVariable;
 }

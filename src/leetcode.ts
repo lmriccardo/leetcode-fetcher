@@ -86,10 +86,28 @@ export const FetchUserRecentSubmissions = async (vars: types.QueryVariables, hea
 }
 
 export const FetchUserRecentAcSubmissions = async (vars: types.QueryVariables, headers?: HeadersInit)
-  : Promise<types.RecentSubmissionList | null> =>
+  : Promise<types.RecentAcSubmissionList | null> =>
 {
   return createGraphQLFetcher(
-    (x: types.RecentSubmissionList) => x, queries.user.recentAcSubmissions,
+    (x: types.RecentAcSubmissionList) => x, queries.user.recentAcSubmissions,
+    constants.SITES.GRAPHQL.URL, headers
+  )(vars);
+}
+
+export const FetchSubmissionDetail = async (vars: types.QueryVariables, headers?: HeadersInit)
+  : Promise<types.SubmissionDetails | null> =>
+{
+  return createGraphQLFetcher(
+    (x: types.SubmissionDetails) => x, queries.solveql.submissionDetails,
+    constants.SITES.GRAPHQL.URL, headers
+  )(vars);
+}
+
+export const FetchShortSubmissionDetail = async (vars: types.QueryVariables, headers?: HeadersInit)
+  : Promise<types.ShortSubmissionDetailsData | null> =>
+{
+  return createGraphQLFetcher(
+    utils.FormatShortSubmissionDetails, queries.solveql.submissionDetails,
     constants.SITES.GRAPHQL.URL, headers
   )(vars);
 }
