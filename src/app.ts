@@ -4,6 +4,7 @@ import * as types from './types';
 import * as utils from './utils';
 import commands from './commands'
 import constants from './constants';
+import chalk from 'chalk';
 
 const ExcuteCommandIfExists = async (
   command: string, state: types.AppStateData, 
@@ -40,7 +41,7 @@ export const RunApp = async () => {
   for (; ;) {
     // Create the interface for reading the stdin
     const rl = createInterface({ input, output });
-    const answer = (await rl.question(">> (Type help for commands): ")).trim();
+    const answer = (await rl.question(chalk.magentaBright(">> (Type help for commands): "))).trim();
     rl.close();
     
     if (answer.length < 1) continue; // Check that there is a command

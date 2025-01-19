@@ -67,6 +67,69 @@ export interface SingleQuestionData extends SelectProblemData {
   link: string;
 }
 
+interface UserProfile {
+  ranking?: number,
+  realName?: string,
+  aboutMe?: string,
+  websites: string[],
+  countryName?: string,
+  company?: string,
+  jobTitle?: string,
+  skillTags: string[],
+  reputation?: number,
+  solutionCount?: number
+}
+
+interface UserSubmitStats {
+  totalSubmissionNum : {difficulty: string, count: number, submissions: number}[];
+  acSubmissionNum : {difficulty: string, count: number, submissions: number}[];
+}
+
+export interface MatchedUser {
+  matchedUser: {
+    username: string, // The user username
+    githubUrl?: string, // The github URL
+    twitterUrl?: string, // The twitter URL
+    linkedinUrl?: string, // The linkedin URL
+    profile: UserProfile, // The complete user profile
+    submitStats: UserSubmitStats
+  }
+}
+
+declare type LanguageProblemCount = {languageName?: string, problemsSolved?: number}[];
+
+export interface UserLanguageStats {
+  matchedUser: {
+    languageProblemCount : LanguageProblemCount
+  }
+}
+
+export interface RecentSubmissionList {
+  recentSubmissionList : {
+    id: string,
+    title: string,
+    titleSlug: string,
+    timestamp: string,
+    statusDisplay: string,
+    lang: string
+  }[];
+};
+
+interface CompleteUserProfile extends UserProfile {
+  username: string,
+  githubUrl?: string, // The github URL
+  twitterUrl?: string, // The twitter URL
+  linkedinUrl?: string, // The linkedin URL
+}
+
+export interface User {
+  profile?: CompleteUserProfile,
+  submitStats?: UserSubmitStats,
+  langStats?: LanguageProblemCount,
+  subList?: RecentSubmissionList,
+  acSubList?: RecentSubmissionList
+}
+
 export interface Variable {
   name: string;
   match: string; 
@@ -100,6 +163,7 @@ export interface AppStateData {
   selectedUser?: string; // The selected user
   userLogin?: UserLoginData; // User login data
   cookies?: LeetcodeSessionCookies; // Leetcode cookies from login
+  profile?: User; // The complete logged in user profile
   commands: AppCommandData[]; // All commands
   variables: Variables; // All the App variables
 }
@@ -117,3 +181,8 @@ export interface AppCommandData {
 
 export declare type HttpResponseCallBack = (r: HTTPResponse) => Promise<void>;
 export declare type HttpRequestCallBack = (r: HTTPRequest) => Promise<void>;
+
+type QVariable = string | number | undefined | string[] | Record<string,string>;
+export type QueryVariables = {
+  [key: string] : QVariable;
+}

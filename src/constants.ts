@@ -10,6 +10,7 @@ const constants = {
   },
   OUTPATH: "./problems",
   SITES : {
+    CONNECTION_ATTEMPT: 3,
     LOGIN_PAGE: {
       URL: "https://leetcode.com/accounts/login/",
       INPUT_U: 'input#id_login.input__2o8B',
@@ -22,6 +23,19 @@ const constants = {
         contentType: 'text/html',
         body: ""
       }
+    },
+    PROBLEMSET_PAGE : {
+      URL: 'https://leetcode.com/problemset/'
+    },
+    GRAPHQL : {
+      URL: 'https://leetcode.com/graphql'
+    },
+    GENERIC_HEADERS : {
+      "Accept": "*/*",
+      "Accept-Encoding" : "gzip, deflate, br, zstd",
+      "Accept-Language" : "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Connection" : "keep-alive",
+      "Cache-Control": "no-cache",
     }
   },
   PROMPT: {
@@ -53,7 +67,22 @@ const constants = {
         "(  ●   )",
         "( ●    )"
       ]
-    }
+    },
+    DOTS: {
+		  INTERVAL: 80,
+		  FRAMES: [
+        "⠋",
+        "⠙",
+        "⠹",
+        "⠸",
+        "⠼",
+        "⠴",
+        "⠦",
+        "⠧",
+        "⠇",
+        "⠏"
+      ]
+    },
   },
   APP : {
     COMMANDS: {

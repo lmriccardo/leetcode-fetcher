@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import * as types from './types'
 import constants from './constants';
 import puppeteer from 'puppeteer';
+import prompt from 'prompt';
+import chalk from 'chalk';
 
 export const GetExistingProblems = async (problem_folder: string): Promise<string[]> => {
   try {
@@ -68,6 +70,41 @@ const SaveHtmlToMarkdown = (path: fs.PathOrFileDescriptor, content: string) => {
 
 export const FormatString = (template: string, ...args: any[]): string => {
   return template.replace(/{(\d+)}/g, (_, index) => args[index] || "");
+}
+
+export const ArraySum = (...values: number[]): number => values.reduce((x, y) => x + y);
+
+export const Transpose = <T>(matrix: T[][]) : T[][] => 
+{
+  return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]))
+}
+
+const CenterString = (str: string, width: number): string =>
+{
+  // Calculate the total padding required
+  const padding = width - str.length;
+
+  // If the string is already wider than the desired width, return the original string
+  if (padding <= 0) {
+      return str;
+  }
+
+  // Calculate left and right padding
+  const leftPadding = Math.floor(padding / 2);
+  const rightPadding = Math.ceil(padding / 2);
+
+  // Return the centered string
+  return ' '.repeat(leftPadding) + str + ' '.repeat(rightPadding);
+}
+
+export const JustifyString = (str: string, width: number, dir: number): string =>
+{
+  if (dir == 0) return CenterString(str, width); // Center the string
+
+  const remaining_size = (width - str.length) > 0;
+  if (dir == 1) return str + ((remaining_size) ? ' '.repeat(width - str.length) : '');
+  if (dir == -1) return ((remaining_size) ? ' '.repeat(width - str.length) : '') + str;
+  return str;
 }
 
 export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {
@@ -204,4 +241,29 @@ export const OpenLoginBrowser = async (res_cb: types.HttpResponseCallBack, req_c
   await new Promise((resolve) => {
     browser.on('disconnected', resolve);
   })
+}
+
+export const RequestPassword = async (credentials: types.UserLoginData) 
+  : Promise<boolean> =>
+{
+  let attemps = constants.CRYPTO.AUTH_ATTEMPTS;
+  prompt.message = '';
+  prompt.delimiter = '';
+
+  while (attemps > 0) {
+    try {
+      prompt.start({noHandleSIGINT: true});
+      const { password } = await prompt.get(constants.PROMPT.VALIDATION_SCHEMA);
+      const validation_result = VerifyPassword(
+        password as string, credentials.salt!, credentials.password!)
+      
+      if (validation_result) return true;
+    } catch (error) {
+    }
+
+    console.error(chalk.redBright("Wrong Password. Retry."))
+    attemps--;
+  }
+
+  return false;
 }

@@ -11,20 +11,23 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
-import * as gqlQueries from '../queries';
 
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
-  const category = state.variables[0].value as string; // The category filter
-  const limit = state.variables[1].value as number; // The limit filter
-  const skip = state.variables[2].value as number; // The skip filter
-  let difficulty = (state.variables[3].value as string).toUpperCase();
+  const category = state.variables["CATEGORY"].value as string; // The category filter
+  const limit = state.variables["LIMIT"].value as number; // The limit filter
+  const skip = state.variables["SKIP"].value as number; // The skip filter
+  let difficulty = (state.variables["DIFFICULTY"].value as string).toUpperCase();
   if (difficulty === "ALL") difficulty = ""; 
 
-  const problems_data = await lc.FetchProblems(
-    {category: category, limit: limit, skip: skip, difficulty: difficulty},
-    utils.FormatProblemsData, gqlQueries.problemListQuery
+  const problems_data = await lc.FetchProblemList(
+    {
+      categorySlug: category, 
+      limit: limit, 
+      skip: skip, 
+      filters: {difficulty}
+    }
   );
 
   if (!problems_data) return state;
@@ -60,10 +63,14 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
   let problems_data: types.ProblemsData | null = null;
 
   if (is_by_id) {
-    const category = state.variables[0].value as string;
-    problems_data = await lc.FetchProblems(
-      {category: category, limit: 1, skip: Number.parseInt(data[2])-1},
-      utils.FormatProblemsData, gqlQueries.problemListQuery
+    const category = state.variables["CATEGORY"].value as string;
+    
+    problems_data = await lc.FetchProblemList(
+      {
+        category: category, 
+        limit: 1, 
+        skip: Number.parseInt(data[2])-1
+      }
     );
     
     if (!problems_data) {
@@ -71,10 +78,8 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
       return state;
     }
   } else {
-    const category = state.variables[0].value as string;
-    problems_data = await lc.FetchProblems(
-      {category: category}, utils.FormatProblemsData, gqlQueries.problemListQuery
-    );
+    const category = state.variables["CATEGORY"].value as string;
+    problems_data = await lc.FetchProblemList({category: category});
 
     if (!problems_data) return state;
 
@@ -130,10 +135,9 @@ const DetailCommand = async (data: string[], state: types.AppStateData)
   }
 
   // Otherwise, fetch using the API
-  const category = state.variables[0].value as string;
-  const problems_data = await lc.FetchProblems(
-    {category: category, limit: 1, skip: problem_id-1},
-    utils.FormatProblemsData, gqlQueries.problemListQuery
+  const category = state.variables["CATEGORY"].value as string;
+  const problems_data = await lc.FetchProblemList(
+    {category: category, limit: 1, skip: problem_id-1}
   );
 
   if (problems_data) console.log(problems_data.problemsetQuestionList[0]);
@@ -193,22 +197,20 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
   var last_question: types.SingleQuestionData|null = null;
 
   // Get already existing problem instances
-  const existing_idxs = await utils.GetExistingProblems(state.variables[4].value as string);
+  const existing_idxs = await utils.GetExistingProblems(state.variables["FOLDER"].value as string);
 
   for (let idx = 0; idx < problem_idxs.length; idx++) {
     const curr_problem = state.lastSelectedProblems.problemsetQuestionList[problem_idxs[idx]];
     const frontend_id = curr_problem.questionFrontendId;
     if (existing_idxs.includes(frontend_id)) continue;
 
-    const question = await lc.FetchQuestion(
-      curr_problem.titleSlug, utils.FormatQuestionData, gqlQueries.singleProblemQuery
-    );
+    const question = await lc.FetchQuestion({titleSlug: curr_problem.titleSlug});
 
     last_question = question;
     
     if (!question) continue; // If there is no question, continue
 
-    utils.CreateQuestionInstance(last_question, state.variables[4].value as string);
+    utils.CreateQuestionInstance(last_question, state.variables["FOLDER"].value as string);
   }
 
   state.lastQuestion = (last_question) ? last_question : undefined;

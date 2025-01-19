@@ -1,4 +1,4 @@
-import constants from './constants'
+import constants from '../constants'
 import chalk from 'chalk';
 
 class Spinner {
@@ -17,11 +17,13 @@ class Spinner {
       return;
     }
 
-    const interval = constants.SPINNER.BOUNCING_BALL.INTERVAL;
-    const frames = constants.SPINNER.BOUNCING_BALL.FRAMES;
+    const interval = constants.SPINNER.DOTS.INTERVAL;
+    const frames = constants.SPINNER.DOTS.FRAMES;
 
     this.interval_id = setInterval(() => {
-      process.stdout.write(chalk.greenBright(`${frames[this.counter]}`) + ` ${this.message}\r`);
+      process.stdout.write(chalk.cyanBright(`${frames[this.counter]}`) 
+        + chalk.bold(chalk.gray(` ${this.message}`)) + '\r');
+
       this.counter = (this.counter + 1) % frames.length;
     }, interval);
   }
@@ -35,6 +37,13 @@ class Spinner {
     clearInterval(this.interval_id);
     this.interval_id = undefined;
     this.counter = 0;
+
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0); 
+  }
+
+  changeMessage(msg: string) {
+    this.message = msg;
   }
 };
 

@@ -15,6 +15,7 @@ import * as utils from '../utils';
 import * as fs from 'fs';
 import * as path from 'path'
 import constants from '../constants';
+import chalk from 'chalk';
 
 const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean): RegExp => {
   const prefix = utils.FormatString("^{0}", name);
@@ -87,7 +88,7 @@ export const unset_command: types.AppCommandData = {
 const SaveCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => {
   if (data.length < 1) {
-    console.error("Missing the target filename");
+    console.error(chalk.redBright("Missing the target filename"));
     return state;
   }
 
@@ -96,25 +97,10 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
   let userLogin = null;
   
   if (state.variables['SAVE_LOGIN'].value === 1 && state.userLogin !== undefined) {
-    let attemps = constants.CRYPTO.AUTH_ATTEMPTS;
-    prompt.message = '';
-    prompt.delimiter = '';
-
-    while (attemps > 0) {
-      try {
-        prompt.start({noHandleSIGINT: true});
-        const { password } = await prompt.get(constants.PROMPT.VALIDATION_SCHEMA);
-        const validation_result = utils.VerifyPassword(
-          password as string, state.userLogin.salt!, state.userLogin.password!)
-        
-        if (validation_result) {
-          cookies = state.cookies;
-          userLogin = state.userLogin;
-          break;
-        }
-      } catch (error) {
-      }
-      attemps--;
+    const result = await utils.RequestPassword(state.userLogin);
+    if (result) {
+      cookies = state.cookies;
+      userLogin = state.userLogin;
     }
   } else {
     cookies = state.cookies;
@@ -145,13 +131,13 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
   const parent = path.dirname(filename);
   if (!fs.existsSync(parent)) {
     if (fs.mkdirSync(parent, 0o777) === undefined) {
-      console.error("Impossible to create parent path of provided file");
+      console.error(chalk.redBright("Impossible to create parent path of provided file"));
       return state;
     }
   }
 
   fs.writeFileSync(filename, content);
-  console.log("Current state saved into:", filename);
+  console.log("Current state saved into:", chalk.blueBright(filename));
   return state;
 }
 
@@ -174,7 +160,7 @@ const IfNullUndefined = (data?: any | null): any | undefined => {
 const LoadCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => {
   if (data.length < 1) {
-    console.error("Missing the target filename");
+    console.error(chalk.redBright("Missing the target filename"));
     return state;
   }
 
@@ -182,7 +168,7 @@ const LoadCommand = async (data: string[], state: types.AppStateData)
 
   // Check that the provided file exists
   if (!fs.existsSync(filename)) {
-    console.error(`File ${filename} does not exists`);
+    console.error(chalk.redBright(`File ${filename} does not exists`));
     return state;
   }
 
@@ -196,12 +182,14 @@ const LoadCommand = async (data: string[], state: types.AppStateData)
   state.selectedUser = IfNullUndefined(content_data.selectedUser);
   state.userLogin = IfNullUndefined(content_data.userLogin);
   state.cookies = IfNullUndefined(content_data.cookies);
-
-  for (let key in Object.keys(state.variables)) {
-    state.variables[key].value = content_data.variables[key].value;
+  
+  let counter = 0;
+  for (const key of Object.keys(state.variables)) {
+    state.variables[key].value = content_data.variables[counter].value;
+    counter++;
   }
 
-  console.log("Loaded state from:", filename);
+  console.log("Loaded state from:", chalk.blueBright(filename));
 
   return state;
 }
@@ -217,9 +205,21 @@ export const load_command: types.AppCommandData = {
   help: 'load FILEPATH - Load the state from a json file\n'
 }
 
-const ShowCommand = async (_: string[], state: types.AppStateData) 
+const ShowCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
+  const sensitive = (data.length > 0) && data[0] === 'sensitive' && state.cookies !== undefined;
+
+  let validation_result = true;
+  if (sensitive && state.userLogin !== undefined) {
+    validation_result = await utils.RequestPassword(state.userLogin!);
+  }
+
+  if (!validation_result) {
+    console.error(chalk.redBright("Cannot show sensitive informations."));
+    return state;
+  }
+
   // Shows some variables and informations about the state
   console.log("STATE INFORMATIONS\n------------------");
   console.log("Last Command:", state.lastCommand);
@@ -238,6 +238,19 @@ const ShowCommand = async (_: string[], state: types.AppStateData)
   } else {
     console.log("Last Question:", state.lastQuestion);
   }
+
+  if (sensitive && validation_result) {
+    console.log("\nSENSITIVE STATE INFORMATIONS\n------------------");
+    console.log("Leetcode Cookies: ");
+    console.log(`    LEETCODE_SESSION = ${state.cookies?.LEETCODE_SESSION}`);
+    console.log(`    csrftoken = ${state.cookies?.csrftoken}`);
+    console.log(`    messages = ${state.cookies?.messages}`);
+    console.log("");
+    console.log("User credentials: ");
+    console.log(`    Username: ${state.userLogin?.username}`)
+    console.log(`    Hash: ${state.userLogin?.password}`)
+    console.log(`    Salt: ${state.userLogin?.salt}`)
+  }
   
   console.log("\nVARIABLES\n---------");
   Object.values(state.variables).forEach((value: types.Variable, idx: number) => {
@@ -255,8 +268,8 @@ export const show_command: types.AppCommandData = {
   group    : 'State',
   name     : 'Show Command',
   command  : 'show',
-  syntax   : /^show$/,
+  syntax   : /^show(?:\s(sensitive))$/,
   callback : ShowCommand,
 
-  help: 'show - Shows values and informations about the state.\n'
+  help: 'show [SENSITIVE] - Shows values and informations about the state.\n'
 };
