@@ -3,3 +3,4 @@ problems/
 dist/
 .npmrc
 prova/
+state.json

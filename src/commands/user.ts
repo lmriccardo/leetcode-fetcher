@@ -195,7 +195,8 @@ const InspectCommand = async (data: string[], state: types.AppStateData)
       return state;
     }
 
-    data.push(state.selectedUser);
+    utils.PrintUserSummary(state.profile!);
+    return state;
   }
 
   const result = await GetUserData(data[0], state);

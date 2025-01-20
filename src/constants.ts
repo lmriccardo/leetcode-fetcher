@@ -10,6 +10,7 @@ const constants = {
     AUTH_ATTEMPTS: 3
   },
   OUTPATH: "./problems",
+  DIFFICULTIES: ["EASY", "MEDIUM", "HARD"],
   SITES : {
     CONNECTION_ATTEMPT: 3,
     LOGIN_PAGE: {
@@ -101,12 +102,12 @@ const constants = {
       },
       LIMIT : {
         name    : 'LIMIT', 
-        match   : 'LIMIT\\s(\\d+)', 
+        match   : 'LIMIT\\s(\\-?\\d+)',
         value   : 20, 
         default : 20, 
         type    : "n",
         desc    : 'Maximum number of problems to list',
-        values  : '[1...Inf]'
+        values  : '[-1,1...Inf]'
       },
       SKIP : {
         name    : 'SKIP', 
@@ -153,6 +154,11 @@ const constants = {
         chalk.greenBright
       ],
       JUST: [0, 1, 0, 0, 0, 0, 0]
+    },
+    EMOJIS: {
+      CHECK: '✅',
+      WRONG: '❌',
+      DOWNLOADED: '⬇️'
     }
   }
 }

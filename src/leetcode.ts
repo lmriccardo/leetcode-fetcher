@@ -40,6 +40,21 @@ const createGraphQLFetcher = <T, U>(
   };
 };
 
+export const FetchNumberOfProblems = async (difficulty: string) : Promise<number | null> =>
+{
+  return createGraphQLFetcher(
+    (data: types.ProblemsetQuestionListData) => data.problemsetQuestionList.total,
+    queries.problemset.problemsetQuestionList, constants.SITES.GRAPHQL.URL
+  )(
+    {
+      categorySlug: "",
+      limit: 1,
+      skip: 0,
+      filters: {difficulty}
+    }
+  )
+}
+
 export const FetchProblemList = (variables: types.QueryVariables) 
   : Promise<types.ProblemsData | null> =>
 {

@@ -51,6 +51,7 @@ export const FormatQuestionData = (data: types.SelectProblemData)
       hints: data.question.hints,
       solution: data.question.solution,
       codeSnippets: data.question.codeSnippets,
+      status: data.question.status
     },
   }
 )
@@ -67,6 +68,7 @@ export const FormatProblemsData = (data: types.ProblemsetQuestionListData)
 export const FormatUserData = (user: types.MatchedUser, lstats: types.UserLanguageStats,
   subList: types.SubmissionList, acSubList: types.SubmissionList) : types.User => (
   {
+    link: `https://leetcode.com/u/${user!.matchedUser.username}`,
     profile: {
       username: user!.matchedUser.username,
       realName: user!.matchedUser.profile.realName,
@@ -96,6 +98,17 @@ export const FormatShortSubmissionDetails = (details: types.SubmissionDetails)
     lang: details.submissionDetails?.lang
   }
 );
+
+export const GetAllProblemsCount = async (): Promise<types.ProblemsCount> => 
+(
+  (await Promise.all(
+      constants.DIFFICULTIES.map(async (x): Promise<types.ProblemsCount> => {
+        const nproblems = await lc.FetchNumberOfProblems(x);
+        return {[x]: nproblems ?? 0};
+      })
+    )
+  ).reduce((p, c) => ({...p,...c}))
+)
 
 const SaveHtmlToMarkdown = (path: fs.PathOrFileDescriptor, content: string) => {
   // Initialize turndown service and convert
@@ -367,6 +380,7 @@ const PrintShortSubmissionsDetails = (submissions: types.SubmissionList) =>
   ));
 
   const table = new TablePrinter("Recent Accepted Submissions", columns, properties);
+  table.showLine = false;
 
   sublist.forEach((x: types.ShortSubmission) =>
   {
@@ -387,6 +401,7 @@ const PrintShortSubmissionsDetails = (submissions: types.SubmissionList) =>
 export const PrintUserSummary = (user: types.User) => {
   console.log(`${chalk.bold("Username")}   : ${chalk.blueBright(user.profile?.username)}`);
   console.log(`${chalk.bold("Real Name")}  : ${chalk.gray(user.profile?.realName)}`);
+  console.log(`${chalk.bold("Profile")}    : ${chalk.underline(user.link)}`);
   
   if (user.profile?.aboutMe !== undefined && user.profile?.aboutMe !== "") {
     const about_box = new RectangleBox(80, 0, chalk.italic);

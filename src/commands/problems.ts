@@ -11,6 +11,8 @@
 import * as types from '../types';
 import * as utils from '../utils';
 import * as lc from '../leetcode';
+import { Spinner } from '../pprint';
+import chalk from 'chalk';
 
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
@@ -59,51 +61,60 @@ export const list_command: types.AppCommandData = {
 const FetchCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
+  const spinner = new Spinner("");
+
   const is_by_id = data[2] !== undefined;
 
   // Two possible ways to fetch the question. The first way is by ID.
   let problems_data: types.ProblemsData | null = null;
+  let problem_id = Number.parseInt(data[2]) ?? null;
 
-  if (is_by_id) {
-    const category = state.variables["CATEGORY"].value as string;
-    
-    problems_data = await lc.FetchProblemList(
-      {
-        categorySlug: category, 
-        limit: 1, 
-        skip: Number.parseInt(data[2])-1,
-        filters: {}
-      }
-    );
-    
-    if (!problems_data) {
-      console.error(`No problem with ID ${data[2]}`);
-      return state;
-    }
-  } else {
-    const category = state.variables["CATEGORY"].value as string;
-    problems_data = await lc.FetchProblemList(
-      {
-        categorySlug: category, 
-        limit: state.lastSelectedProblems?.totalQuestions ?? 100,
-        skip: 0,
-        filters: {}
-      });
+  if (!is_by_id) {
+    const title = data[1];
+    spinner.changeMessage(`Searching Question ID for: ${title}`);
+    spinner.start();
 
-    if (!problems_data) return state;
+    const problem_result = await lc.FetchQuestion({titleSlug: title});
+    spinner.stop();
 
-    const selected_problem = problems_data.problemsetQuestionList.filter(
-      (value: types.QuestionGenericData) : boolean => (value.titleSlug === data[1])
-    );
-
-    if (selected_problem.length < 1) {
-      console.error(`No problem with title ${data[1]}`);
+    if (!problem_result) {
+      console.error(chalk.redBright("No results found"));
       return state;
     }
 
-    problems_data.count = 1;
-    problems_data.problemsetQuestionList = selected_problem;
+    problem_id = problem_result.question.questionFrontendId;
   }
+
+  spinner.changeMessage(`Fetching Problem ID: ${problem_id}`);
+  spinner.start();
+
+  // Check if the problem has already been fetched
+  if (state.lastSelectedProblems !== undefined) {
+    const search_result = state.lastSelectedProblems.problemsetQuestionList.filter(
+      (question) => (Number.parseInt(question.questionFrontendId) === problem_id));
+
+    if (search_result.length > 0) {
+      spinner.stop();
+      console.log(chalk.greenBright("Question seems already fetched."));
+      return state;
+    }
+  }
+  
+  problems_data = await lc.FetchProblemList(
+    {
+      categorySlug: '', 
+      limit: 1, 
+      skip: problem_id-1,
+      filters: {}
+    }
+  );
+  
+  if (!problems_data) {
+    console.error(`No problem with ID ${problem_id}`);
+    return state;
+  }
+
+  spinner.stop();
 
   utils.PrintProblemsSummary(problems_data);
 

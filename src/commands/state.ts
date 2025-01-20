@@ -30,6 +30,12 @@ const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean): 
 
 const SetCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => {
+  // Check that there is something not undefined
+  if (data.every((x) => (x === undefined))) {
+    console.error(chalk.redBright("Command formatted uncorrectly."));
+    return state;
+  }
+
   // Take the variables that are being set by the command
   const keys = Object.keys(state.variables);
   for (let index = 0; index < data.length; index++) {
@@ -95,16 +101,19 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
   // Check if the flag to save also the login credentials is true
   let cookies = null;
   let userLogin = null;
+  let profile = null;
   
   if (state.variables['SAVE_LOGIN'].value === 1 && state.userLogin !== undefined) {
     const result = await utils.RequestPassword(state.userLogin);
     if (result) {
       cookies = state.cookies;
       userLogin = state.userLogin;
+      profile = state.profile;
     }
   } else {
     cookies = state.cookies;
     userLogin = state.userLogin;
+    profile = state.profile;
   }
 
   // Select the data to save into the json file
@@ -114,6 +123,7 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
     lastQuestion: state.lastQuestion || null,
     selectedUser: state.selectedUser || null,
     userLogin: userLogin || null,
+    profile: profile || null,
     cookies: cookies || null,
     variables: Object.values(state.variables).map((x: types.Variable)
       : { name: string, value: string | number } => (
@@ -181,6 +191,7 @@ const LoadCommand = async (data: string[], state: types.AppStateData)
   state.lastSelectedProblems = IfNullUndefined(content_data.lastSelectedProblems);
   state.selectedUser = IfNullUndefined(content_data.selectedUser);
   state.userLogin = IfNullUndefined(content_data.userLogin);
+  state.profile = IfNullUndefined(content_data.profile);
   state.cookies = IfNullUndefined(content_data.cookies);
   
   let counter = 0;

@@ -13,7 +13,6 @@ class Spinner {
 
   start() {
     if (this.interval_id !== undefined) {
-      console.error();
       return;
     }
 

@@ -17,7 +17,7 @@ const ExcuteCommandIfExists = async (
 
   if (cmd_filter.length < 1) {
     const error_str = utils.FormatString("No Command: {0}", command);
-    console.error(error_str);
+    console.error(chalk.redBright(error_str));
     return state;
   }
 
@@ -34,8 +34,18 @@ const ExcuteCommandIfExists = async (
 }
 
 export const RunApp = async () => {
+  // Fetch the total number of problems for each difficulty
+  const nproblems = await utils.GetAllProblemsCount();
+  const totals = utils.ArraySum(...Object.values(nproblems));
+  const counts = {...nproblems, ALL: totals};
+
   // Initialize the app state
-  let app_state = { commands: commands, variables: constants.APP.APP_VARIABLES } as types.AppStateData;
+  let app_state = 
+  { 
+    commands: commands, 
+    variables: constants.APP.APP_VARIABLES, 
+    problemsCount: counts 
+  } as types.AppStateData;
 
   // Loop indefinitely up until the quit command is not given
   for (; ;) {

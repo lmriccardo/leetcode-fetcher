@@ -43,6 +43,13 @@ export interface CodeSnippetData {
   code: string;
 }
 
+interface Solution {
+  id: string,
+  canSeeDetails: boolean,
+  hasVideoSolution: boolean,
+  paidOnlyVideo: boolean
+}
+
 interface Question {
   content: string;
   companyTagStats: string[];
@@ -52,7 +59,8 @@ interface Question {
   isPaidOnly: boolean;
   questionId: number;
   questionFrontendId: number;
-  solution: string;
+  solution: Solution;
+  status: string|null,
   title: string;
   titleSlug: string;
   topicTags: QuestionTag[];
@@ -156,6 +164,7 @@ interface CompleteUserProfile extends UserProfile {
 }
 
 export interface User {
+  link?: string,
   profile?: CompleteUserProfile,
   submitStats?: UserSubmitStats,
   langStats?: LanguageProblemCount,
@@ -189,8 +198,13 @@ export interface LeetcodeSessionCookies {
   LEETCODE_SESSION?: string;
 }
 
+export interface ProblemsCount {
+  [key: string]: number
+};
+
 export interface AppStateData {
   lastCommand?: string; // The last executed command
+  problemsCount?: ProblemsCount, // The total number of problems for each difficulty
   lastSelectedProblems?: ProblemsData; // Last selected problems
   lastQuestion?: SingleQuestionData; // Last selected question
   selectedUser?: string; // The selected user

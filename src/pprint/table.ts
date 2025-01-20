@@ -29,6 +29,7 @@ class TablePrinter {
   private rows: (string|number)[][] = [];
   private rowsizes: number[] = [];
   private title: string;
+  private showLines: boolean = true;
 
   constructor(title?: string, cols?: string[], props?: ColumnProperties[]) {
     if (cols !== undefined && props !== undefined) {
@@ -84,11 +85,15 @@ class TablePrinter {
     return style(utils.JustifyString(content, properties.size, properties.just!));
   }
 
+  private line(x: string): string {
+    return (this.showLines) ? x : ' ';
+  }
+
   private contentToString(content: (string | number)[], header?: boolean) : string {
     const c = content.map((y, idx) : string => this.getContent(
-      this.valueToString(y), idx, header)).join(` ${ascii.vb} `);
+      this.valueToString(y), idx, header)).join(` ${this.line(ascii.vb)} `);
 
-    return `${ascii.vb} ${c} ${ascii.vb}`;
+    return `${this.line(ascii.vb)} ${c} ${this.line(ascii.vb)}`;
   } 
 
   private rowToString(row_idx: number, vsize: number) : string {
@@ -151,14 +156,23 @@ class TablePrinter {
       + this.padding[1] * (this.ncols - 1);
   }
 
+  get showLine(): boolean {
+    return this.showLines;
+  }
+
+  set showLine(value: boolean) {
+    this.showLines = value;
+  }
+
   toString() : string {
     const formatBasicLine = (start: string, end: string, sep1: string, sep2: string)
       : string =>
     {
       const middle_content = this.cprops.map((x): string =>
-        Array(x.size + this.padding[0]).fill(sep1).join("")).join(sep2);
+        Array(x.size + this.padding[0]).fill(this.line(sep1)).join(""))
+        .join(this.line(sep2));
 
-      return `${start}${middle_content}${end}`;
+      return `${this.line(start)}${middle_content}${this.line(end)}`;
     }
 
     // Let's construct the first basic lines of ascii characters
