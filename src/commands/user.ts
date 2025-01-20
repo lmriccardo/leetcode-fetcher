@@ -189,8 +189,13 @@ const InspectCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> =>
 {
   if (data.length < 1) {
-    console.error(chalk.redBright("A username must be provided."));
-    return state;
+    // Check if a user is logged
+    if (!state.selectedUser) {
+      console.error(chalk.redBright("No current logged user. A username must be provided."));
+      return state;
+    }
+
+    data.push(state.selectedUser);
   }
 
   const result = await GetUserData(data[0], state);
@@ -204,8 +209,9 @@ export const inspect_command: types.AppCommandData = {
   group    : 'User',
   name     : 'Inspect Command',
   command  : 'inspect',
-  syntax   : /^inspect\s(.*?)$/,
+  syntax   : /^inspect(?:\s(.*?))$/,
   callback : InspectCommand,
 
-  help: 'inspect USERNAME - Inspect a given username if it exists.\n'
+  help: 'inspect [USERNAME] - Inspect a given username if it exists' +
+        ', or the current logged one.\n'
 };
