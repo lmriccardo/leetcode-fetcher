@@ -238,7 +238,7 @@ const ShowCommand = async (data: string[], state: types.AppStateData)
   
   if (state.lastSelectedProblems !== undefined) {
     console.log("");
-    utils.PrintProblemsSummary(state.lastSelectedProblems);
+    await utils.PrintProblemsSummary(state.lastSelectedProblems, state.variables);
   } else {
     console.log("Total Problems:", state.lastSelectedProblems);
   }

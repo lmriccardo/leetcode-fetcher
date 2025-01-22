@@ -15,10 +15,7 @@ export const GetExistingProblems = async (problem_folder: string): Promise<strin
   try {
     var result: string[] = [];
 
-    if (!fs.existsSync(problem_folder)) {
-      console.error(`Folder ${problem_folder} does not exists.`);
-      return [];
-    }
+    if (!fs.existsSync(problem_folder)) return [];
 
     const files = await readdir(problem_folder, { withFileTypes: true });
     result = files.map((value: fs.Dirent): string => {
@@ -99,6 +96,15 @@ export const FormatShortSubmissionDetails = (details: types.SubmissionDetails)
   }
 );
 
+export const FormatCookies = (cookies?: types.LeetcodeSessionCookies) : {Cookie: string} | undefined => {
+  if (!cookies) return undefined;
+
+  const cookie_s = `LEETCODE_SESSION=${cookies.LEETCODE_SESSION!}; ` +
+      `csrftoken=${cookies.csrftoken!};`;
+
+  return {"Cookie": cookie_s};
+}
+
 export const GetAllProblemsCount = async (): Promise<types.ProblemsCount> => 
 (
   (await Promise.all(
@@ -150,8 +156,8 @@ export const JustifyString = (str: string, width: number, dir: number): string =
   if (dir == 0) return CenterString(str, width); // Center the string
 
   const remaining_size = (width - str.length) > 0;
-  if (dir == 1) return str + ((remaining_size) ? ' '.repeat(width - str.length) : '');
-  if (dir == -1) return ((remaining_size) ? ' '.repeat(width - str.length) : '') + str;
+  if (dir == -1) return str + ((remaining_size) ? ' '.repeat(width - str.length) : '');
+  if (dir == 1) return ((remaining_size) ? ' '.repeat(width - str.length) : '') + str;
   return str;
 }
 
@@ -238,21 +244,85 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   console.log("Result written in folder:", question_folder);
 }
 
-export const PrintProblemsSummary = (problems: types.ProblemsData) => {
-  console.log("Total Problems:", problems.totalQuestions);
-  console.log("Fetched Problems:", problems.count);
+export const PrintUsedFilters = (vars: types.Variables) => {
+  // Print the used filters
+  const filter_table = new TablePrinter(undefined, undefined,
+    [
+      { size: 23, just: -1},
+      { size: 15, style: chalk.blueBright, just: -1}
+    ]
+  );
+
+  constants.APP.LIST_QUERY_VARIABLES.forEach((x: string) => {
+    const var_type = vars[x].type; // Take the corresponding type
+    const var_value = (var_type == "n") ? vars[x].value.toString() : vars[x].value;
+    filter_table.pushRow(`Used Filter ${x}:`, var_value);
+  })
+
+  filter_table.showLine = false;
+  console.log(filter_table.toString());
+}
+
+export const PrintProblemsSummary = async (problems: types.ProblemsData, vars: types.Variables) => {
+
+  console.log("Total Problems   :", problems.totalQuestions);
+  console.log("Fetched Problems :", problems.count);
+
+  // Get the list of all problems already downloaded
+  const downloaded_problems = await GetExistingProblems(vars['FOLDER'].value as string);
+
+  // Create the table for the problem list
+  const list_table = new TablePrinter(undefined,
+    ['STATUS', 'IDX', 'ID', 'DIFFICULTY', 'TITLE', 'TAGS'],
+    [
+      {size: 8,                                        just:  1}, // Status column
+      {size: 5,  style: chalk.yellowBright                     }, // Local index column
+      {size: 5,  style: chalk.yellowBright                     }, // Problem ID column
+      {size: 10, style: constants.APP.DIFFICULTY_STYLE         }, // The difficulty column
+      {size: 65, style: chalk.italic,                  just: -1}, // The title column
+      {size: 81, style: chalk.gray,                    just: -1}  // The tags column
+    ]
+  );
+
   problems.problemsetQuestionList.forEach(
     (value: types.QuestionGenericData, idx: number) => {
       const tags = value.topicTags
         .map((value: types.QuestionTag) : string => value.name)
         .reduce((p: string, c: string) : string => p + ", " + c);
 
-      const format_str = 
-        `[${idx}] <ID=${value.questionFrontendId}> (${value.difficulty}) ` +
-        `${value.title.toUpperCase()} [${tags}]`;
-        
-      console.log(format_str);
-    })
+      let status = '';
+
+      // Check if the current question is already downloaded
+      if (downloaded_problems.includes(value.questionFrontendId)) {
+        status += constants.APP.EMOJIS.DOWNLOADED;
+      }
+
+      // Now check the status of the question
+      if (value.status && value.status === "ac") {
+        status += constants.APP.EMOJIS.CHECK;
+      } else {
+        status += constants.APP.EMOJIS.WRONG;
+      }
+
+      // Check if it is premium question
+      if (value.isPaidOnly) {
+        status += constants.APP.EMOJIS.NOT_FREE;
+      } else {
+        status += constants.APP.EMOJIS.FREE;
+      }
+
+      // Check if the video solution is available
+      if (value.hasVideoSolution) {
+        status += constants.APP.EMOJIS.HAS_VIDEO;
+      }
+
+      list_table.pushRow(status, idx, value.questionFrontendId, 
+        value.difficulty, value.title, tags);
+    }
+  );
+
+  list_table.showLine = false;
+  console.log(list_table.toString());
 }
 
 export const PrintQuestionSummary = (question: types.SingleQuestionData) => {

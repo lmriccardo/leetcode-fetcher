@@ -146,6 +146,12 @@ const constants = {
         values  : '[0,1]'
       }
     } as types.Variables,
+    LIST_QUERY_VARIABLES: ['CATEGORY', 'LIMIT', 'SKIP', 'DIFFICULTY'],
+    DIFFICULTY_STYLE: (x: string) : string => {
+      if (x.includes('E')) return chalk.greenBright(x);
+      if (x.includes('M')) return chalk.rgb(255, 165, 0)(x);
+      return chalk.redBright(x);
+    },
     SHORT_SUBMISSION: {
       COLS: ['ID', 'Title', 'Question ID', 'Timestamp', 'Language', 'Runtime', 'Memory'],
       STYLES: [
@@ -153,12 +159,15 @@ const constants = {
         chalk.cyanBright, chalk.magentaBright, chalk.greenBright, 
         chalk.greenBright
       ],
-      JUST: [0, 1, 0, 0, 0, 0, 0]
+      JUST: [0, -1, 0, 0, 0, 0, 0]
     },
     EMOJIS: {
       CHECK: '✅',
       WRONG: '❌',
-      DOWNLOADED: '⬇️'
+      DOWNLOADED: '🔗',
+      NOT_FREE: '🙈',
+      FREE: '🙉',
+      HAS_VIDEO: '📹'
     }
   }
 }

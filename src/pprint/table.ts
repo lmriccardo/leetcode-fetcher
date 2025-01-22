@@ -30,24 +30,49 @@ class TablePrinter {
   private rowsizes: number[] = [];
   private title: string;
   private showLines: boolean = true;
+  private header: boolean = true;
+  private show_title: boolean = true;
 
   constructor(title?: string, cols?: string[], props?: ColumnProperties[]) {
+    // If both columns and props are given check that the dimensions matches.
     if (cols !== undefined && props !== undefined) {
       if (cols.length !== props.length) {
         console.error(chalk.redBright("Not enough properties or columns"));
         throw new Error("Error");
       }
+    }
 
-      this.ncols = cols.length;
+    // If only columns are defined or in general the columns parameter
+    // is not undefined than we can set the columns and a number of 
+    // default properties.
+    if (cols !== undefined) {
       this.columns = cols;
-      this.cprops = props.map((x) : ColumnProperties => ({
-        size: x.size,
-        style: x.style || ((x: string) => x),
-        just: x.just || 0
-      }));
+      this.ncols = cols.length;
+      this.cprops = Array(this.ncols).fill({size: 20, just: 0});
+    }
+
+    // If also or only properties are defined, then we can set the 
+    // properties. We have already check the two dimensions matches
+    // and we can set the values correspondly.
+    if (props !== undefined) {
+      this.cprops = this.cprops = props.map((x) : ColumnProperties => (
+        {
+          size: x.size,
+          style: x.style || ((x: string) => x),
+          just: x.just || 0
+        }
+      ));
+
+      this.ncols = this.cprops.length;
+
+      // If columns are undefined or empty then set the show columsn to false
+      if ((!cols) || (cols.length == 0)) {
+        this.header = false;
+      }
     }
 
     this.title = title ?? "";
+    this.showTitle = (title !== undefined || title !== null);
   }
 
   private getContentSize(content: string|number) : number {
@@ -82,19 +107,21 @@ class TablePrinter {
   private getContent(content: string, idx: number, header?: boolean) : string {
     const properties = this.cprops[idx];
     const style = (header) ? (x: string) => chalk.bold(x.toUpperCase()) : properties.style!;
-    return style(utils.JustifyString(content, properties.size, properties.just!));
+    const content_just = (header) ? 0 : properties.just!;
+    return style(utils.JustifyString(content, properties.size, content_just));
   }
 
   private line(x: string): string {
-    return (this.showLines) ? x : ' ';
+    return (this.showLines) ? x : '';
   }
 
   private contentToString(content: (string | number)[], header?: boolean) : string {
     const c = content.map((y, idx) : string => this.getContent(
       this.valueToString(y), idx, header)).join(` ${this.line(ascii.vb)} `);
 
-    return `${this.line(ascii.vb)} ${c} ${this.line(ascii.vb)}`;
-  } 
+    const s = (this.showLine) ? ' ' : '';
+    return `${this.line(ascii.vb)}${s}${c}${s}${this.line(ascii.vb)}`;
+  }
 
   private rowToString(row_idx: number, vsize: number) : string {
     const rows = this.rows.slice(row_idx, row_idx + vsize);
@@ -164,6 +191,22 @@ class TablePrinter {
     this.showLines = value;
   }
 
+  get showHeader(): boolean {
+    return this.header;
+  }
+
+  set showHeader(value: boolean) {
+    this.header = value;
+  }
+
+  get showTitle(): boolean {
+    return this.show_title;
+  }
+
+  set showTitle(value: boolean) {
+    this.show_title = value;
+  }
+
   toString() : string {
     const formatBasicLine = (start: string, end: string, sep1: string, sep2: string)
       : string =>
@@ -187,7 +230,8 @@ class TablePrinter {
       current_row_idx += vsize;
     }
 
-    const content = formatted_rows.join(`\n${t_middle}\n`);
+    const middle_del = (this.showLine) ? `\n${t_middle}\n` : '\n'; 
+    const content = formatted_rows.join(middle_del);
     const header  = this.contentToString(this.columns, true);
 
     let title_str = "";
@@ -198,7 +242,9 @@ class TablePrinter {
     }
 
     // Formats the table
-    const table = `${title_str}${t_upper}\n${header}\n${t_middle}\n${content}\n${t_lower}`
+    const prefix = (this.header) ? `${t_upper}\n${header}\n${t_middle}` : `${t_upper}`;
+    const table = `${(this.show_title) ? title_str : ''}${prefix}\n${content}\n${t_lower}`
+
     return table;
   }
 };

@@ -25,19 +25,24 @@ const ListCommand = async (_: string[], state: types.AppStateData)
   var diff_filter: string | undefined = difficulty;
   if (difficulty === "ALL") diff_filter = undefined;
 
+  // We need to set the cookies for obtain the current status
+  let header = utils.FormatCookies(state.cookies);
+
   const problems_data = await lc.FetchProblemList(
     {
       categorySlug: category, 
       limit: limit, 
       skip: skip, 
       filters: {diff_filter}
-    }
+    },
+    header
   );
 
   if (!problems_data) return state;
 
   // Shows the problems and some informations
-  utils.PrintProblemsSummary(problems_data);
+  utils.PrintUsedFilters(state.variables);
+  await utils.PrintProblemsSummary(problems_data, state.variables);
 
   // Save the list of problems into the state
   state.lastSelectedProblems = problems_data;
@@ -100,13 +105,16 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
     }
   }
   
+  // We need to set the cookies for obtain the current status
+  let header = utils.FormatCookies(state.cookies);
   problems_data = await lc.FetchProblemList(
     {
       categorySlug: '', 
       limit: 1, 
       skip: problem_id-1,
       filters: {}
-    }
+    },
+    header
   );
   
   if (!problems_data) {
@@ -116,7 +124,8 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
 
   spinner.stop();
 
-  utils.PrintProblemsSummary(problems_data);
+  utils.PrintUsedFilters(state.variables);
+  await utils.PrintProblemsSummary(problems_data, state.variables);
 
   // Add the problems to the state
   if (state.lastSelectedProblems === undefined) {
@@ -155,8 +164,10 @@ const DetailCommand = async (data: string[], state: types.AppStateData)
   }
 
   // Otherwise, fetch using the API
+  // We need to set the cookies for obtain the current status
+  let header = utils.FormatCookies(state.cookies);
   const problems_data = await lc.FetchProblemList(
-    {categorySlug: "", limit: 1, skip: problem_id-1, filters: {}}
+    {categorySlug: "", limit: 1, skip: problem_id-1, filters: {}}, header
   );
 
   if (problems_data) console.log(problems_data.problemsetQuestionList[0]);

@@ -55,12 +55,12 @@ export const FetchNumberOfProblems = async (difficulty: string) : Promise<number
   )
 }
 
-export const FetchProblemList = (variables: types.QueryVariables) 
+export const FetchProblemList = (variables: types.QueryVariables, header?: HeadersInit) 
   : Promise<types.ProblemsData | null> =>
 {
   return createGraphQLFetcher(
     utils.FormatProblemsData, queries.problemset.problemsetQuestionList,
-    constants.SITES.GRAPHQL.URL
+    constants.SITES.GRAPHQL.URL, header
   )(variables);
 }
 
