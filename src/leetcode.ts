@@ -73,6 +73,13 @@ export const FetchQuestion = async (variables: types.QueryVariables)
   )(variables);
 }
 
+export const FetchDailyQuestion = async () : Promise<types.DailyQuestion | null> => 
+{
+  return createGraphQLFetcher((x: types.DailyQuestion) => x, 
+    queries.problemset.questionOfToday, constants.SITES.GRAPHQL.URL
+  )({});
+}
+
 export const FetchUserProfile = async (vars: types.QueryVariables, headers?: HeadersInit) 
   : Promise<types.MatchedUser | null> =>
 {

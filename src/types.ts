@@ -13,7 +13,7 @@ export interface QuestionGenericData {
   acRate: number;
   difficulty: Difficulty;
   freqBar?: string;
-  questionFrontendId: string;
+  questionFrontendId: number;
   isFavor: boolean;
   isPaidOnly: boolean;
   status?: string
@@ -29,6 +29,17 @@ export interface ProblemsetQuestionListData {
     total: number;
     questions: QuestionGenericData[];
   };
+}
+
+export interface DailyQuestionData {
+  date: string,
+  userStatus: string,
+  link: string,
+  question: QuestionGenericData;
+}
+
+export interface DailyQuestion {
+  activeDailyCodingChallengeQuestion: DailyQuestionData;
 }
 
 export interface ProblemsData {
@@ -207,6 +218,7 @@ export interface AppStateData {
   problemsCount?: ProblemsCount, // The total number of problems for each difficulty
   lastSelectedProblems?: ProblemsData; // Last selected problems
   lastQuestion?: SingleQuestionData; // Last selected question
+  dailyQuestion?: SingleQuestionData; // The daily question
   selectedUser?: string; // The selected user
   userLogin?: UserLoginData; // User login data
   cookies?: LeetcodeSessionCookies; // Leetcode cookies from login

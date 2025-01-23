@@ -11,15 +11,15 @@ import * as fs from 'fs';
 import * as types from './types'
 import * as lc from './leetcode'
 
-export const GetExistingProblems = async (problem_folder: string): Promise<string[]> => {
+export const GetExistingProblems = async (problem_folder: string): Promise<number[]> => {
   try {
-    var result: string[] = [];
+    var result: number[] = [];
 
     if (!fs.existsSync(problem_folder)) return [];
 
     const files = await readdir(problem_folder, { withFileTypes: true });
-    result = files.map((value: fs.Dirent): string => {
-      return value.name.split("-")[0];
+    result = files.map((value: fs.Dirent): number => {
+      return Number.parseInt(value.name.split("-")[0]);
     });
 
     return result;
@@ -168,7 +168,7 @@ export const TimestampToDate = (timestamp: number) : string => (
 export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {
   // Check if the input data is null
   if (question === null) {
-    console.error("Impossible to create problem instance. Input is null.");
+    console.error(chalk.redBright("[ERROR] Impossible to create problem instance. Input is null."));
     return;
   }
 
@@ -177,7 +177,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   // Create also the root folder if it does not exists
   if (!fs.existsSync(question_root_folder)) {
     if (fs.mkdirSync(question_root_folder, { recursive: true }) === undefined) {
-      console.error(`Impossible to create root folder: ${question_root_folder}`);
+      console.error(chalk.redBright(`[ERROR] Impossible to create root folder: ${question_root_folder}`));
       return;
     }
   }
@@ -230,7 +230,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   // First we need to create the question folder (it should not exist)
   fs.mkdir(question_folder, 0o777, (err: NodeJS.ErrnoException | null) =>
     {
-      if (err) console.error("Operation not permitted: ", err);
+      if (err) console.error(chalk.redBright(`[ERROR] Operation not permitted: ${err}`));
     });
 
   // Write the README file using the conversion operation
@@ -241,7 +241,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   fs.writeFileSync(question_html, question.question.content);
 
   // Log the result
-  console.log("Result written in folder:", question_folder);
+  console.log(chalk.greenBright(`[INFO] Result written in folder: ${question_folder}`));
 }
 
 export const PrintUsedFilters = (vars: types.Variables) => {
@@ -383,7 +383,7 @@ export const RequestPassword = async (credentials: types.UserLoginData)
     } catch (error) {
     }
 
-    console.error(chalk.redBright("Wrong Password. Retry."))
+    console.error(chalk.redBright("[ERROR] Wrong Password. Retry."))
     attemps--;
   }
 

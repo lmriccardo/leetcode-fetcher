@@ -80,14 +80,10 @@ const CheckUserSession = async (spinner: Spinner, state: types.AppStateData)
 const ToShortSubmission = async (submissions: types.SubmissionData[], state: types.AppStateData) 
   : Promise<types.SubmissionList> =>
 {
-  let headers = undefined;
-  if (!state.cookies) {
+  let headers = utils.FormatCookies(state.cookies);
+  
+  if (!headers) {
     console.warn(chalk.yellowBright("To fetch submission details a session must exists."));
-  } else {
-    const cookie_s = `LEETCODE_SESSION=${state.cookies.LEETCODE_SESSION!}; ` +
-      `csrftoken=${state.cookies.csrftoken!};`;
-
-    headers = {"Cookie": cookie_s};
   }
 
   const submission_list = await Promise.all(submissions.map(

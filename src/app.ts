@@ -2,7 +2,8 @@ import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
 import * as types from './types';
 import * as utils from './utils';
-import commands from './commands'
+import commands from './commands';
+import { daily_command } from './commands/problems';
 import constants from './constants';
 import chalk from 'chalk';
 
@@ -33,7 +34,32 @@ const ExcuteCommandIfExists = async (
   return state;
 }
 
+const PrintEntryView = () => {
+  console.log(chalk.rgb(255, 128, 0)(constants.APP.TITLE));
+  console.log();
+
+  const title_len = constants.APP.TITLE.split('\n')[0].length;
+  
+  const rem_size = (title_len - constants.APP.SUBTITLE.length) / 2 - 1;
+  const padding  = '─'.repeat(rem_size); 
+  const subtitle_styled = chalk.italic(chalk.gray(constants.APP.SUBTITLE));
+  const complete_subtitle = `${padding} ${subtitle_styled} ${padding}`;
+  console.log(complete_subtitle);
+  console.log();
+
+  const author_name = chalk.bold("Riccardo La Marca");
+  const author_email = chalk.italic("riccardo.lamarca98@gmail.com");
+  const repo_url = chalk.underline('https://github.com/lmriccardo/leetcode-fetcher.git')
+
+  console.log(`@${chalk.gray("Author")}      ${author_name} <${author_email}>`)
+  console.log(`@${chalk.gray("Repository")}  ${repo_url}`)
+  console.log(`@${chalk.gray("Version")}     v0.0.5`)
+  console.log();
+}
+
 export const RunApp = async () => {
+  PrintEntryView();
+
   // Fetch the total number of problems for each difficulty
   const nproblems = await utils.GetAllProblemsCount();
   const totals = utils.ArraySum(...Object.values(nproblems));
@@ -47,11 +73,17 @@ export const RunApp = async () => {
     problemsCount: counts 
   } as types.AppStateData;
 
+  app_state = await daily_command.callback([""], app_state);
+  
+  const question = chalk.magentaBright(">> (Type help for commands): ");
+
   // Loop indefinitely up until the quit command is not given
   for (; ;) {
+    const date_now = (new Date()).toLocaleString('en-IT');
+
     // Create the interface for reading the stdin
     const rl = createInterface({ input, output });
-    const answer = (await rl.question(chalk.magentaBright(">> (Type help for commands): "))).trim();
+    const answer = (await rl.question(`[${chalk.blueBright(date_now)}] ${question}`)).trim();
     rl.close();
     
     if (answer.length < 1) continue; // Check that there is a command

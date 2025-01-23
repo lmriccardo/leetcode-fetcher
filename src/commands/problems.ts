@@ -6,6 +6,7 @@
  *  - fetch  [Fetch a single problems from leetcode]
  *  - detail [Provides more informations about a fetched problem]
  *  - create [Creates a local instance of a fetched problem]
+ *  - daily  [Fetch the current daily question]
  */
 
 import * as types from '../types';
@@ -17,6 +18,9 @@ import chalk from 'chalk';
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
+  const spinner = new Spinner("Fetching Problem List with provided filters");
+  spinner.start();
+
   const category = state.variables["CATEGORY"].value as string; // The category filter
   const limit = state.variables["LIMIT"].value as number; // The limit filter
   const skip = state.variables["SKIP"].value as number; // The skip filter
@@ -37,6 +41,8 @@ const ListCommand = async (_: string[], state: types.AppStateData)
     },
     header
   );
+
+  spinner.stop();
 
   if (!problems_data) return state;
 
@@ -83,11 +89,12 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
     spinner.stop();
 
     if (!problem_result) {
-      console.error(chalk.redBright("No results found"));
+      console.error(chalk.redBright("[ERROR] No results found"));
       return state;
     }
 
     problem_id = problem_result.question.questionFrontendId;
+    
   }
 
   spinner.changeMessage(`Fetching Problem ID: ${problem_id}`);
@@ -96,11 +103,11 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
   // Check if the problem has already been fetched
   if (state.lastSelectedProblems !== undefined) {
     const search_result = state.lastSelectedProblems.problemsetQuestionList.filter(
-      (question) => (Number.parseInt(question.questionFrontendId) === problem_id));
+      (question) => (question.questionFrontendId === problem_id));
 
     if (search_result.length > 0) {
       spinner.stop();
-      console.log(chalk.greenBright("Question seems already fetched."));
+      console.log(chalk.greenBright("[INFO] Question seems already fetched."));
       return state;
     }
   }
@@ -108,21 +115,16 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
   // We need to set the cookies for obtain the current status
   let header = utils.FormatCookies(state.cookies);
   problems_data = await lc.FetchProblemList(
-    {
-      categorySlug: '', 
-      limit: 1, 
-      skip: problem_id-1,
-      filters: {}
-    },
+    { categorySlug: '',  limit: 1,  skip: problem_id-1, filters: {} },
     header
   );
+
+  spinner.stop();
   
   if (!problems_data) {
     console.error(`No problem with ID ${problem_id}`);
     return state;
   }
-
-  spinner.stop();
 
   utils.PrintUsedFilters(state.variables);
   await utils.PrintProblemsSummary(problems_data, state.variables);
@@ -131,7 +133,8 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
   if (state.lastSelectedProblems === undefined) {
     state.lastSelectedProblems = problems_data;
   } else {
-    state.lastSelectedProblems.problemsetQuestionList.push(problems_data.problemsetQuestionList[0]);
+    const problem = problems_data.problemsetQuestionList[0];
+    state.lastSelectedProblems.problemsetQuestionList.push(problem);
     state.lastSelectedProblems.count++;
   }
 
@@ -193,11 +196,13 @@ export const detail_command: types.AppCommandData = {
 const CreateCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
+  const spinner = new Spinner('');
+
   // Obtain the problem title from the current state if exists
   if (state.lastSelectedProblems === undefined) {
-    console.error(
-      "No locally fetched problems. Consider running `fetch` or `list` command" + 
-      "before `create`."
+    console.error(chalk.redBright("[ERROR] ")                                                    +
+      chalk.redBright("No locally fetched problems. Consider running `fetch` or `list` command") + 
+      chalk.redBright("before `create`.")
     );
     
     return state;
@@ -209,11 +214,11 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
   if (data[0] !== undefined) {
     const problem_idx = Number.parseInt(data[0]);
     if (problem_idx >= fetch_length) {
-      console.error(
-        "Given index exceeds number of locally fetched problems. Consider\n"    +
-        "increasing the `LIMIT` variable and run the `list` command again\n"    +
-        "or directly locally fetching the specified problem either providing\n" + 
-        "the frontend Id or the title-slug."
+      console.error(chalk.redBright("[ERROR] ")                                                  +
+        chalk.redBright("Given index exceeds number of locally fetched problems. Consider\n")    +
+        chalk.redBright("increasing the `LIMIT` variable and run the `list` command again\n")    +
+        chalk.redBright("or directly locally fetching the specified problem either providing\n") + 
+        chalk.redBright("the frontend Id or the title-slug.")
       );
 
       return state;
@@ -234,6 +239,9 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
     const frontend_id = curr_problem.questionFrontendId;
     if (existing_idxs.includes(frontend_id)) continue;
 
+    spinner.changeMessage(`Creating instance for ${curr_problem.title}`);
+    spinner.start();
+
     const question = await lc.FetchQuestion({titleSlug: curr_problem.titleSlug});
 
     last_question = question;
@@ -243,6 +251,7 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
     utils.CreateQuestionInstance(last_question, state.variables["FOLDER"].value as string);
   }
 
+  spinner.stop();
   state.lastQuestion = (last_question) ? last_question : undefined;
 
   return state;
@@ -263,3 +272,65 @@ export const create_command: types.AppCommandData = {
         'when the input index is out of bound or if the list is empty. If no index is\n'   +
         'specified, then it will downloads all the fetched problems.\n'
 };
+
+const DailyCommand = async (data: string[], state: types.AppStateData)
+  : Promise<types.AppStateData> =>
+{
+  const spinner = new Spinner("Fetching daily question.");
+  spinner.start();
+
+  // Check if the question has been already fetched
+  if (state.dailyQuestion !== undefined) {
+    console.log(chalk.greenBright('[INFO] Daily question already fetched.'));
+  } else {
+    const daily_question = await lc.FetchDailyQuestion(); // Fetch the daily question
+    
+    if (!daily_question) {
+      spinner.stop();
+      console.log(chalk.greenBright('[INFO] No daily question for today.'));
+      return state;
+    }
+
+    // Once we have fetched the daily question we need to fetch the details
+    const title_slug = daily_question.activeDailyCodingChallengeQuestion.question.titleSlug;
+    const details = await lc.FetchQuestion({titleSlug: title_slug});
+    state.dailyQuestion = details!;
+
+    spinner.stop();
+
+    utils.PrintQuestionSummary(details!);
+  }
+
+  // Check if also the create command has been given
+  if (data[0] !== undefined && data[0] === 'create') {
+    spinner.changeMessage("Creating instance for daily question.");
+    spinner.stop();
+
+    const question_id = state.dailyQuestion.question.questionFrontendId;
+    const folder = state.variables["FOLDER"].value as string;
+    const existing_ids = await utils.GetExistingProblems(folder);
+    
+    if (existing_ids.includes(question_id)) {
+      spinner.stop();
+      console.log(chalk.greenBright('[INFO] Daily question instance already exists.'));
+      return state;
+    }
+
+    // If it does not exists then create the instance
+    utils.CreateQuestionInstance(state.dailyQuestion, folder);
+  }
+
+  spinner.stop();
+  return state;
+}
+
+// Daily Command - Shows the question of today
+export const daily_command: types.AppCommandData = {
+  group    : 'Problems',
+  name     : 'Daily Command',
+  command  : 'daily',
+  syntax   : /^daily(?:\s+(create))$/,
+  callback : DailyCommand,
+
+  help: 'daily [create] - Fetch the current daily question and optionally create an instance.'
+}

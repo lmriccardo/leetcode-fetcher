@@ -28,11 +28,6 @@ class Spinner {
   }
 
   stop() {
-    if (this.interval_id === undefined) {
-      console.error("[Error] Spinner is not spinning yet.");
-      return;
-    }
-
     clearInterval(this.interval_id);
     this.interval_id = undefined;
     this.counter = 0;

@@ -207,7 +207,37 @@ class TablePrinter {
     this.show_title = value;
   }
 
+  private getColumnSize(col_idx: number): number {
+    const column = utils.Transpose(this.rows)[col_idx];
+    return Math.max(...column.map((x) => this.getContentSize(x)));
+  }
+
+  private fitColumnSize() {
+    let total_size = 1 + this.padding[1]*(this.ncols - 1);
+    for (let i = 0; i < this.ncols; i++) {
+      const actual_size = this.getColumnSize(i);
+      this.cprops[i].size = Math.min(actual_size, this.cprops[i].size);
+
+      if (this.columns[i] !== undefined) {
+        this.cprops[i].size = Math.max(this.cprops[i].size, this.columns[i].length);
+      }
+
+      total_size += this.cprops[i].size;
+    }
+
+    // Check if the total size is grater then the current terminal window size
+    const [terminal_w, _] = process.stdout.getWindowSize();
+    if (total_size > terminal_w) {
+      console.warn(chalk.yellowBright(`[WARNING] Total table width is grater then ` +
+          `current terminal window size (${total_size} > ${terminal_w}).`
+      ));
+    }
+  }
+
   toString() : string {
+    // Before transforming the table into a string we need to re-fit the columns
+    this.fitColumnSize();
+
     const formatBasicLine = (start: string, end: string, sep1: string, sep2: string)
       : string =>
     {
