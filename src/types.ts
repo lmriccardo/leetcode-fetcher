@@ -219,6 +219,8 @@ export interface AppStateData {
   lastSelectedProblems?: ProblemsData; // Last selected problems
   lastQuestion?: SingleQuestionData; // Last selected question
   dailyQuestion?: SingleQuestionData; // The daily question
+  watchQuestionId?: number, // The cached problem Id
+  watchQuestion?: SingleQuestionData, // The cached problem details
   selectedUser?: string; // The selected user
   userLogin?: UserLoginData; // User login data
   cookies?: LeetcodeSessionCookies; // Leetcode cookies from login

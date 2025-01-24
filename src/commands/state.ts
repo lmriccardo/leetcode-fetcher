@@ -9,7 +9,6 @@
  *  - show  [Shows the current state (non-sensitive information)]
  */
 
-import prompt from 'prompt';
 import * as types from '../types';
 import * as utils from '../utils';
 import * as fs from 'fs';
@@ -235,6 +234,7 @@ const ShowCommand = async (data: string[], state: types.AppStateData)
   console.log("STATE INFORMATIONS\n------------------");
   console.log("Last Command:", state.lastCommand);
   console.log("Logged-in User:", state.selectedUser);
+  console.log("Watching Question ID:", state.watchQuestionId);
   
   if (state.lastSelectedProblems !== undefined) {
     console.log("");

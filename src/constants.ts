@@ -51,6 +51,17 @@ const constants = {
           type: 'string'
         }
       }
+    } as prompt.Schema,
+    CREATE_QUESTION : {
+      properties: {
+        answer: {
+          description: "Create the instance? [Y/N]",
+          required: true,
+          type: "string",
+          pattern: /^(Y|N)$/,
+          message: "Please type Y (for yes) or N (for no)"
+        }
+      }
     } as prompt.Schema
   },
   // Thanks to: https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json
