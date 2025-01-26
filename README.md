@@ -49,7 +49,7 @@ Please, make sure to have node.js and npm installed in your system.
 Alternatively, it is possible to run the application using Docker.
 
 ```
-docker run --rm -i -v ./:/leetcode lmriccardo/leetcode-fetcher:latest
+docker run --rm -it -v ./:/leetcode lmriccardo/leetcode-fetcher:latest
 ```
 
 Notice that, the bind mount `-v ./:/leetcode` is **required** to obtain the result on the host machine. When the application starts, the first command to execute must be
