@@ -247,3 +247,19 @@ type QVariable = string | number | undefined | string[] | Record<string,string|u
 export type QueryVariables = {
   [key: string] : QVariable;
 }
+
+export interface TestStatus {
+  status_code?: number;
+  pretty_lang?: string;
+  run_success?: boolean;
+  code_answer?: string[];
+  elapsed_time?: number;
+  task_finish_time?: number;
+  expected_code_answer?: string[];
+  total_correct?: number;
+  total_testcases?: number;
+  status_memory?: string;
+  status_runtime?: string;
+  state: string;
+  test_cases?: string[];
+};

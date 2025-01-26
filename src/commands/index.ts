@@ -12,7 +12,7 @@ const commands: types.AppCommandData[] =
     prob.fetch_command , prob.detail_command, prob.create_command,
     gen.help_command   , gen.clear_command,   gen.quit_command,
     state.unset_command, usr.inspect_command, prob.daily_command,
-    sub.watch_command  ,
+    sub.watch_command  , sub.test_command
   ];
 
 export default commands;

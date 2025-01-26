@@ -4,6 +4,7 @@ import * as utils from './utils'
 import queries from './queries'
 import constants from './constants'
 import chalk from 'chalk'
+import { Spinner } from './pprint'
 
 export const FetchGraphQLData = async <T, U>(
   variables: types.QueryVariables, formatData: (data: T) => U, query: string, 
@@ -176,4 +177,68 @@ export const CheckUserSession = async (cookies: types.LeetcodeSessionCookies)
   }
 
   return false;
+}
+
+export const TestSolution = async (state: types.AppStateData)
+  : Promise<types.TestStatus | null> =>
+{
+  const problem = state.watchQuestion!;
+  const problem_title = problem.question.titleSlug;
+  const problem_id = state.watchQuestionId!;
+  const cookies = utils.FormatCookies(state.cookies);
+
+  const request_headers = {
+    ...constants.SITES.GENERIC_HEADERS,
+    ...cookies,
+    Referer: `https://leetcode.com/problems/${problem_title}/`,
+    Origin: 'https://leetcode.com',
+    "Content-Type": 'application/json',
+    "x-csrftoken": state.cookies!.csrftoken!
+  };
+
+  const test_cases = problem.question.exampleTestcaseList.join("\n");
+  const problem_root_folder = state.variables["FOLDER"].value as string;
+  const solution = utils.ReadProblemSolution(problem_root_folder, problem_id, problem_title);
+  const request_body = JSON.stringify(
+    {
+      lang: "python3",
+      question_id: problem_id.toString(),
+      typed_code: solution,
+      data_input: test_cases
+    }
+  );  
+
+  const url = `https://leetcode.com/problems/${problem_title}/interpret_solution/`;
+  const response = await FetchLeetcode(url, 'POST', request_headers, request_body);
+
+  if (!(response && response.ok && response.status === 200)){
+    console.error(chalk.redBright(`Test request terminated with status code: ${response!.status}`));
+    return null;
+  }
+
+  const response_data = await response.json() as {interpret_id: string, test_case: string};
+  const request_id = response_data.interpret_id;
+  
+  const spinner = new Spinner("Waiting for results");
+  spinner.start();
+  
+  const result_url = `https://leetcode.com/submissions/detail/${request_id}/check/`;
+
+  let json_result;
+
+  do {
+
+    const results = await FetchLeetcode(result_url, 'GET', request_headers);
+    if (!(results && results.ok && results.status === 200)){
+      console.error(chalk.redBright(`Check request terminated with status code: ${response!.status}`));
+      return null;
+    }
+    json_result = await results.json() as types.TestStatus;
+    await new Promise(resolve => {setTimeout(resolve, 100);});
+    
+  } while (json_result.state !== 'SUCCESS');
+  
+  spinner.stop();
+  json_result.test_cases = problem.question.exampleTestcaseList;
+  return json_result;
 }

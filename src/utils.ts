@@ -491,3 +491,65 @@ export const PrintUserSummary = (user: types.User) => {
   PrintSubmissionStats(user.submitStats!);
   PrintShortSubmissionsDetails(user.acSubList!);
 }
+
+export const ReadProblemSolution = (folder: string, problem_id: number, problem_title: string)
+  : string | null =>
+{
+  if (!fs.existsSync(folder)) {
+    console.error(chalk.redBright(`[ERROR] ${folder} does not exists.`));
+    return null;
+  }
+
+  const problem_file = join(folder, `${problem_id}-${problem_title}`, 'solution.py');
+  const content = fs.readFileSync(problem_file, {encoding: 'utf-8'});
+
+  // Split the string using the line terminator character
+  const lines = content.split('\n');
+  const final_lines = [];
+  for (const line of lines) {
+    if (line.includes('TESTS')) break;
+    final_lines.push(line);
+  }
+
+  return final_lines.join('\n');
+}
+
+export const PrintTestDetails = (problem: types.SingleQuestionData, result: types.TestStatus) => 
+{
+  console.log();
+  console.log(`Test results for problem: ${chalk.bold(problem.question.title)}`);
+  console.log();
+  console.log(`${chalk.italic("Runtime")}     :`, result.status_runtime!);
+  console.log(`${chalk.italic("Memory")}      :`, result.status_memory!);
+  console.log(`${chalk.italic("Finish Time")} :`, TimestampToDate(result.task_finish_time!));
+  console.log(`${chalk.italic("Elased Time")} : ${result.elapsed_time! / 1e3} [sec]`);
+  console.log(`${chalk.italic("Language")}    :`, result.pretty_lang!);
+  console.log();
+
+  const StatusDisplay = (x: string) : string =>
+  {
+    if (x.includes('OK')) return chalk.greenBright(x);
+    return chalk.redBright(x);
+  }
+
+  const table = new TablePrinter(undefined,
+    ['OUTPUT', 'EXPECTED OUTPUT', 'TEST', 'STATUS'],
+    [
+      {size:  6, style: chalk.yellowBright},
+      {size: 15, style: chalk.yellowBright},
+      {size: 40, style: chalk.gray        },
+      {size:  6, style: StatusDisplay     }
+    ]
+  );
+
+  for (let i = 0; i < result.total_testcases!; i++) {
+    const output = result.code_answer![i];
+    const expected = result.expected_code_answer![i];
+    const test = result.test_cases![i].replace('\n', ', ');
+    const status = (output === expected) ? 'OK' : 'NO';
+    table.pushRow(output, expected, test, status);
+  }
+
+  console.log(table.toString());
+  console.log();
+}
