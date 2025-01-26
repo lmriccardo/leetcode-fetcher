@@ -6,7 +6,13 @@ RUN npm install -g npm
 RUN npm install
 
 COPY . .
+RUN npm run build
+RUN npm install -g .
+
+RUN mkdir /leetcode
+RUN chown node:node /leetcode
 
 USER node
+WORKDIR /leetcode
 
-CMD [ "npm", "run", "app" ]
+CMD [ "lcfetcher" ]

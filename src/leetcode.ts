@@ -296,7 +296,6 @@ const RunSolution = async <T extends types.GenericSubmitStatus>(
     return null;
   }
 
-  console.log(url, request_body);
   const response = await FetchLeetcode(url, 'POST', request_headers, request_body);
 
   if (!(response && response.ok && response.status === 200)){
