@@ -6,7 +6,7 @@
 - [x] Implements the `submit` command
 - [x] Move the tests to another file in the instance folder
 - [x] `submit` command also updates the user details
-- [ ] Update the README file and all the releases
+- [x] Update the README file and all the releases
 - [x] `inspect` command should always fetch user stats remotely
 
 #### Additional
