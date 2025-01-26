@@ -12,7 +12,3 @@ class Solution:
     def isHappy(self, n: int) -> bool:
         
         ...
-
-# TESTS
-print(Solution().isHappy(19))
-print(Solution().isHappy(2))

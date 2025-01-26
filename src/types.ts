@@ -248,18 +248,33 @@ export type QueryVariables = {
   [key: string] : QVariable;
 }
 
-export interface TestStatus {
+export interface GenericSubmitStatus {
   status_code?: number;
   pretty_lang?: string;
   run_success?: boolean;
-  code_answer?: string[];
   elapsed_time?: number;
   task_finish_time?: number;
-  expected_code_answer?: string[];
   total_correct?: number;
   total_testcases?: number;
   status_memory?: string;
   status_runtime?: string;
+  status_msg?: string;
   state: string;
+  runtime_error?: string;
+}
+
+export interface TestStatus extends GenericSubmitStatus {
+  code_answer?: string[];
+  expected_code_answer?: string[];
   test_cases?: string[];
 };
+
+export interface SubmitStatus extends GenericSubmitStatus {
+  compare_result?: string;
+  last_testcase?: string;
+  code_output?: string;
+  expected_output?: string;
+  submission_id?: string;
+}
+
+export declare type SubmissionResult = SubmitStatus & SubmissionDetails;

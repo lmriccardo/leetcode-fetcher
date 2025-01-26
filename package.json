@@ -1,6 +1,6 @@
 {
   "name": "leetcode-fetcher-cli",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "author": "lmriccardo",
   "license": "MIT",
   "description": "A CLi Application for local fetching of leetcode problems",
@@ -13,13 +13,15 @@
     "leetcode",
     "npm",
     "cli",
-    "application"
+    "application",
+    "graphql",
+    "RestAPI",
+    "Typescript"
   ],
   "scripts": {
     "dev": "nodemon --exec ts-node src/main.ts",
     "app": "npx ts-node src/main.ts",
-    "build": "npx tsc",
-    "user": "npx ts-node src/user.ts"
+    "build": "npx tsc"
   },
   "bin": {
     "lcfetcher": "dist/main.js"

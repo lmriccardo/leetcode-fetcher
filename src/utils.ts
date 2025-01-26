@@ -162,7 +162,7 @@ export const JustifyString = (str: string, width: number, dir: number): string =
 }
 
 export const TimestampToDate = (timestamp: number) : string => (
-  (new Date(timestamp * 100)).toISOString()
+  (new Date(timestamp * 100)).toLocaleString()
 )
 
 export const CreateQuestionInstance = (question: types.SingleQuestionData | null, output?: string) => {
@@ -188,6 +188,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   const question_full_name = question_id.toString().concat("-", question_name);
   const question_folder = join(question_root_folder, question_full_name);
   const question_src = join(question_folder, "solution.py");
+  const question_tests = join(question_folder, "tests.txt");
   const question_readme = join(question_folder, "README.md");
   const question_html = join(question_folder, "index.html");
 
@@ -206,26 +207,17 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
                         "\"\"\"";
 
   // Build the source code that will be written into the python file
-  const source_code = "{0}\n\nfrom typing import *\n\n# SOLUTION STARTS\n{1}\n\n# TESTS\n{2}\n";
+  const source_code = "{0}\n\nfrom typing import *\n\n# SOLUTION STARTS\n{1}\n";
 
   // Take the correct code snippet (Python3)
   const code_snippet = question.question.codeSnippets
       .filter((value: types.CodeSnippetData) => value.lang === 'Python3')
       .map((value: types.CodeSnippetData) => value.code)[0] + "\n        ...";
 
-  // Define a regular expression to match the function definition 
-  const functionRegex = /def\s+(\w+)\s*\(/;
-  const match = code_snippet.match(functionRegex);
-  const function_name = match![1];
+  const full_source_code = FormatString(source_code, python_header, code_snippet);
   const tests = question.question.exampleTestcaseList
-      .map((value: string) : string => {
-        return FormatString("print(Solution().{0}({1}))", function_name, value.replace("\n", ","));
-      })
-      .reduce((prev: string, curr: string) : string => {
-        return prev + "\n" + curr
-      });
-
-  const full_source_code = FormatString(source_code, python_header, code_snippet, tests);
+      .map((x: string): string => x.replace('\n', ',,'))
+      .join('\n');
 
   // First we need to create the question folder (it should not exist)
   fs.mkdir(question_folder, 0o777, (err: NodeJS.ErrnoException | null) =>
@@ -239,6 +231,7 @@ export const CreateQuestionInstance = (question: types.SingleQuestionData | null
   // Save the source code content into the source file
   fs.writeFileSync(question_src, full_source_code);
   fs.writeFileSync(question_html, question.question.content);
+  fs.writeFileSync(question_tests, tests);
 
   // Log the result
   console.log(chalk.greenBright(`[INFO] Result written in folder: ${question_folder}`));
@@ -500,18 +493,42 @@ export const ReadProblemSolution = (folder: string, problem_id: number, problem_
     return null;
   }
 
-  const problem_file = join(folder, `${problem_id}-${problem_title}`, 'solution.py');
-  const content = fs.readFileSync(problem_file, {encoding: 'utf-8'});
+  try {
+    const problem_file = join(folder, `${problem_id}-${problem_title}`, 'solution.py');
+    const content = fs.readFileSync(problem_file, {encoding: 'utf-8'});
 
-  // Split the string using the line terminator character
-  const lines = content.split('\n');
-  const final_lines = [];
-  for (const line of lines) {
-    if (line.includes('TESTS')) break;
-    final_lines.push(line);
+    // Split the string using the line terminator character
+    const lines = content.split('\n');
+    const final_lines = [];
+    for (const line of lines) {
+      if (line.includes('TESTS')) break;
+      final_lines.push(line);
+    }
+
+    return final_lines.join('\n');
+  } catch (error) {
+    console.error(chalk.redBright("[ERROR]", error));
+    return null;
+  }
+}
+
+export const ReadProblemTestCases = (folder: string, problem_id: number, problem_title: string)
+  : string[] | null =>
+{
+  if (!fs.existsSync(folder)) {
+    console.error(chalk.redBright(`[ERROR] ${folder} does not exists.`));
+    return null;
   }
 
-  return final_lines.join('\n');
+  try {
+    const test_file = join(folder, `${problem_id}-${problem_title}`, 'tests.txt');
+    const content = fs.readFileSync(test_file, {encoding: 'utf-8'});
+    const lines = content.split('\n');
+    return lines.map((x): string => x.replace(',,', '\n'));
+  } catch (error) {
+    console.error(chalk.redBright("[ERROR]", error));
+    return null;
+  }
 }
 
 export const PrintTestDetails = (problem: types.SingleQuestionData, result: types.TestStatus) => 
@@ -523,14 +540,20 @@ export const PrintTestDetails = (problem: types.SingleQuestionData, result: type
   console.log(`${chalk.italic("Memory")}      :`, result.status_memory!);
   console.log(`${chalk.italic("Finish Time")} :`, TimestampToDate(result.task_finish_time!));
   console.log(`${chalk.italic("Elased Time")} : ${result.elapsed_time! / 1e3} [sec]`);
-  console.log(`${chalk.italic("Language")}    :`, result.pretty_lang!);
+  console.log(`${chalk.italic("Language")}    :`, chalk.blueBright(result.pretty_lang!));
   console.log();
 
-  const StatusDisplay = (x: string) : string =>
-  {
-    if (x.includes('OK')) return chalk.greenBright(x);
-    return chalk.redBright(x);
+  if (result.status_msg! === "Runtime Error") {
+    console.error(chalk.redBright("[ERROR] Runtime Error:", result.runtime_error!));
+    console.log();
+    return;
   }
+
+  const StatusDisplay = (x: string) : string =>
+    {
+      if (x.includes('OK')) return chalk.greenBright(x);
+      return chalk.redBright(x);
+    }
 
   const table = new TablePrinter(undefined,
     ['OUTPUT', 'EXPECTED OUTPUT', 'TEST', 'STATUS'],
@@ -551,5 +574,56 @@ export const PrintTestDetails = (problem: types.SingleQuestionData, result: type
   }
 
   console.log(table.toString());
+  console.log();
+}
+
+export const PrintSubmissionResults = (problem: types.SingleQuestionData, submission: types.SubmissionResult) =>
+{
+  const failed = submission.total_correct! < submission.total_testcases!;
+  const status = (failed) ? chalk.redBright("FAILED") : chalk.greenBright("SUCCESS");
+  
+  console.log();
+  console.log(`Submission results for problem: ${chalk.bold(problem.question.title)}`);
+  console.log();
+  console.log(`${chalk.italic("Final Status")}  :`, status);
+  console.log(`${chalk.italic("Submission Id")} :`, chalk.yellowBright(submission.submission_id!));
+  console.log(`${chalk.italic("Runtime")}       :`, submission.status_runtime!);
+  console.log(`${chalk.italic("Memory")}        :`, submission.status_memory!);
+  console.log(`${chalk.italic("Finish Time")}   :`, TimestampToDate(submission.task_finish_time!));
+  console.log(`${chalk.italic("Elased Time")}   : ${submission.elapsed_time! / 1e3} [sec]`);
+  console.log(`${chalk.italic("Language")}      :`, chalk.blueBright(submission.pretty_lang!));
+  console.log();
+
+  if (submission.status_msg! === "Runtime Error") {
+    console.error(chalk.redBright("[ERROR] Runtime Error:", submission.runtime_error!));
+    console.log();
+    return;
+  }
+
+  const table = new TablePrinter("Last Test Case",
+    ['OUTPUT', 'EXPECTED', 'TEST CASE'],
+    [
+      {size: 20, style: chalk.yellowBright},
+      {size: 20, style: chalk.yellowBright},
+      {size: 40, style: chalk.gray        }
+    ]
+  );
+
+  table.showLine = false;
+  table.pushRow(submission.code_output!, submission.expected_output!, submission.last_testcase!);
+  console.log(table.toString());
+  console.log();
+
+  const ShowsPerc = (x: number): string =>
+    {
+      if (x < 50) return chalk.redBright(x);
+      if (x < 100) return chalk.rgb(255, 165, 0)(x);
+      return chalk.greenBright(x);  
+    } 
+
+  const correct = submission.total_correct!;
+  const total = submission.total_testcases!;
+  const perc = correct/total*100;
+  console.log(`${chalk.italic("Result")} : ${correct}/${total} (${ShowsPerc(perc)} %)`);
   console.log();
 }

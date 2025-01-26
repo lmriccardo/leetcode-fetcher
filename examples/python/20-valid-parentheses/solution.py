@@ -12,9 +12,3 @@ class Solution:
     def isValid(self, s: str) -> bool:
         
         ...
-
-# TESTS
-print(Solution().isValid("()"))
-print(Solution().isValid("()[]{}"))
-print(Solution().isValid("(]"))
-print(Solution().isValid("([])"))

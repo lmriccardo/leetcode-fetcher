@@ -137,6 +137,7 @@ const TestCommand = async (_: string[], state: types.AppStateData)
   return state;
 }
 
+// Test Command - test the solution implementation
 export const test_command: types.AppCommandData = {
   group: 'Submission',
   name: 'Test Command',
@@ -144,5 +145,44 @@ export const test_command: types.AppCommandData = {
   syntax: /^test$/,
   callback: TestCommand,
 
-  help: 'test <question-idx> - Tests the selected problem in leetcode.'
+  help: 'test - Tests the selected problem in leetcode.'
 }
+
+const SubmitCommand = async (_: string[], state: types.AppStateData)
+  : Promise<types.AppStateData> =>
+{
+  // First we need to check if a session is currently available
+  if (!state.cookies) {
+    console.error(chalk.redBright('[ERROR] No current in a session.' + 
+      ' Please login or load a valid session!'));
+
+    return state;
+  }
+
+  // Then we check for watching selected problems
+  if (!state.watchQuestionId) {
+    console.error(chalk.redBright('[ERROR] No problem current being watched.'));
+    return state;
+  }
+
+  const result = await lc.SubmitSolution(state);
+  if (!result) {
+    console.error(chalk.redBright("[ERROR] Something went wrong!"));
+    return state;
+  }
+
+  utils.PrintSubmissionResults(state.watchQuestion!, result);
+  state.profile = await lc.GetUserData(state.selectedUser!, state);
+
+  return state;
+}
+
+export const submit_command: types.AppCommandData = {
+  group: 'Submission',
+  name: 'Submit Command',
+  command: 'submit',
+  syntax: /^submit$/,
+  callback: SubmitCommand,
+
+  help: 'submit - Submit the selected problem solution in leetcode.'
+};

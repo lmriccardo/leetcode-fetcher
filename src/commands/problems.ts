@@ -72,8 +72,12 @@ export const list_command: types.AppCommandData = {
 const FetchCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
-  const spinner = new Spinner("");
+  if (data.length < 1) {
+    console.error(chalk.redBright("[ERROR] Fetch command uncorrectly formatted."));
+    return state;
+  }
 
+  const spinner = new Spinner("");
   const is_by_id = data[2] !== undefined;
 
   // Two possible ways to fetch the question. The first way is by ID.

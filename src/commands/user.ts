@@ -77,59 +77,6 @@ const CheckUserSession = async (spinner: Spinner, state: types.AppStateData)
   }
 }
 
-const ToShortSubmission = async (submissions: types.SubmissionData[], state: types.AppStateData) 
-  : Promise<types.SubmissionList> =>
-{
-  let headers = utils.FormatCookies(state.cookies);
-  
-  if (!headers) {
-    console.warn(chalk.yellowBright("To fetch submission details a session must exists."));
-  }
-
-  const submission_list = await Promise.all(submissions.map(
-      async (x: types.SubmissionData) : Promise<types.ShortSubmission> =>
-      {
-        const short_data = await lc.FetchShortSubmissionDetail({submissionId: x.id}, headers);
-        return {...x, ...short_data!};
-      }
-    )
-  );
-
-  return {submissionList: submission_list};
-}
-
-const GetUserData = async (username: string, state: types.AppStateData) : Promise<types.User | undefined> =>
-{
-  const spinner = new Spinner(`Fetching User ${username} profile`);
-  spinner.start();
-
-  const variables = {username: username};
-  const user_profile = await lc.FetchUserProfile(variables)
-
-  // Check that the provided user exists
-  if (user_profile?.matchedUser === null) {
-    spinner.stop();
-    console.error(chalk.redBright(utils.FormatString(
-      "User {0} does not exists", chalk.bold(username))));
-
-    return undefined;
-  }
-
-  const lang_stats = await lc.FetchUserLanguageStats(variables);
-  const recent_submissions = await lc.FetchUserRecentSubmissions(variables);
-  const recent_ac_submissions = await lc.FetchUserRecentAcSubmissions(
-    {...variables, limit: -1});
-
-  spinner.changeMessage(`Fetching User ${username} submissions`);
-  const short_ac_submission = await ToShortSubmission(recent_ac_submissions?.recentAcSubmissionList!, state);
-  const short_submission = await ToShortSubmission(recent_submissions?.recentSubmissionList!, state);
-
-  spinner.stop();
-
-  // Construct the user type with the fetched informations
-  return utils.FormatUserData(user_profile!, lang_stats!, short_submission, short_ac_submission);
-}
-
 const LoginCommand = async (_: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => 
 {
@@ -162,7 +109,7 @@ const LoginCommand = async (_: string[], state: types.AppStateData)
   console.log(`User ${username} has ${success} logged.`);
 
   // Fetch user details
-  const user_data = await GetUserData(state.userLogin.username!, state);
+  const user_data = await lc.GetUserData(state.userLogin.username!, state);
   state.profile = user_data;
 
   if (user_data) utils.PrintUserSummary(user_data);
@@ -191,11 +138,10 @@ const InspectCommand = async (data: string[], state: types.AppStateData)
       return state;
     }
 
-    utils.PrintUserSummary(state.profile!);
-    return state;
+    data = [state.selectedUser];
   }
 
-  const result = await GetUserData(data[0], state);
+  const result = await lc.GetUserData(data[0], state);
   if (result) utils.PrintUserSummary(result);
 
   return state;
