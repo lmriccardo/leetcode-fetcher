@@ -1,6 +1,6 @@
-node_modules/
-problems/
-dist/
-.npmrc
-prova/
-state.json
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
+Gemfile.lock
