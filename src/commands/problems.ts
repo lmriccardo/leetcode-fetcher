@@ -37,7 +37,7 @@ const ListCommand = async (_: string[], state: types.AppStateData)
       categorySlug: category, 
       limit: limit, 
       skip: skip, 
-      filters: {diff_filter}
+      filters: {difficulty: diff_filter}
     },
     header
   );

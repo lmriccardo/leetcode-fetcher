@@ -53,7 +53,7 @@ const PrintEntryView = () => {
 
   console.log(`@${chalk.gray("Author")}      ${author_name} <${author_email}>`)
   console.log(`@${chalk.gray("Repository")}  ${repo_url}`)
-  console.log(`@${chalk.gray("Version")}     v0.0.5`)
+  console.log(`@${chalk.gray("Version")}     v0.1.1`)
   console.log();
 }
 
