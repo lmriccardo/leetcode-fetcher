@@ -5,9 +5,11 @@
   border-top: 5px solid $grey-color-dark;
   border-bottom: 1px solid $grey-color-light;
   min-height: $spacing-unit * 1.865;
+  background-color: $background-color;
 
   // Positioning context for the mobile navigation icon
-  position: relative;
+  position: fixed;
+  width: 100vw;
 }
 
 .site-title {
@@ -108,6 +110,27 @@
 .site-footer {
   border-top: 1px solid $grey-color-light;
   padding: $spacing-unit 0;
+  position: fixed;
+  bottom: 0;
+  width: 100vw;
+  background-color: $background-color;
+  max-height: 15vh;
+  z-index: 100;
+}
+
+@media (max-width: $on-palm) {
+  .site-footer {
+    position: relative;
+    min-height: auto;
+  }
+}
+
+@media (max-height: 700px) {
+  .site-footer {
+    position: relative;
+    min-height: auto;
+    max-height: unset;
+  }
 }
 
 .footer-heading {
@@ -175,9 +198,47 @@
 /**
  * Page content
  */
+
+.page-content-wrapper {
+  @extend %clearfix;
+  display: flex;
+}
+
+.page-content-col {
+  float: left;
+  border-right: 1px solid $grey-color-light;
+}
+
+.sub-nav {
+  width: $subnav-width;
+  background-color: #f4f4f4;
+  border-right: 2px solid gray;
+  padding-right: calc(#{$spacing-unit} / 2);
+  margin: 0;
+  text-align: $subnav-align;
+  height: 100%;
+  position: fixed;
+
+  @include media-query($on-palm) {
+    visibility: hidden;
+  }
+}
+
+.wrapper-adding {
+  flex: 1;
+  margin-left: 0px;
+  padding-left: calc(#{$subnav-width} + #{$spacing-unit});
+  min-height: calc(100vh - 16vh);
+
+  @include media-query($on-palm) {
+    padding-left: calc(#{$spacing-unit} / 2);
+  }
+}
+
 .page-content {
   padding: $spacing-unit 0;
   flex: 1;
+  margin-top: $spacing-unit * 1.865
 }
 
 .page-heading {
