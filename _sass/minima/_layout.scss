@@ -9,7 +9,8 @@
 
   // Positioning context for the mobile navigation icon
   position: fixed;
-  width: 100vw;
+  width: 100%;
+  top: 0;
 }
 
 .site-title {
@@ -107,30 +108,14 @@
 /**
  * Site footer
  */
+
 .site-footer {
   border-top: 1px solid $grey-color-light;
   padding: $spacing-unit 0;
-  position: fixed;
   bottom: 0;
-  width: 100vw;
+  width: 100%;
   background-color: $background-color;
-  max-height: 15vh;
-  z-index: 100;
-}
-
-@media (max-width: $on-palm) {
-  .site-footer {
-    position: relative;
-    min-height: auto;
-  }
-}
-
-@media (max-height: 700px) {
-  .site-footer {
-    position: relative;
-    min-height: auto;
-    max-height: unset;
-  }
+  z-index: 1000;
 }
 
 .footer-heading {
@@ -163,25 +148,15 @@
 }
 
 .footer-col-2 {
-  width: -webkit-calc(30% - (#{$spacing-unit} / 2));
-  width:         calc(30% - (#{$spacing-unit} / 2));
-}
-
-.footer-col-3 {
-  width: -webkit-calc(15% - (#{$spacing-unit} / 2));
-  width:         calc(15% - (#{$spacing-unit} / 2));
+  width: -webkit-calc(45% - (#{$spacing-unit} / 2));
+  width:         calc(45% - (#{$spacing-unit} / 2));
 }
 
 @include media-query($on-laptop) {
   .footer-col-1,
   .footer-col-2 {
-    width: -webkit-calc(50% - (#{$spacing-unit} / 2));
-    width:         calc(50% - (#{$spacing-unit} / 2));
-  }
-
-  .footer-col-3 {
-    width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-    width:         calc(100% - (#{$spacing-unit} / 2));
+    width: -webkit-calc(45% - (#{$spacing-unit} / 2));
+    width:         calc(45% - (#{$spacing-unit} / 2));
   }
 }
 
@@ -211,24 +186,21 @@
 
 .sub-nav {
   width: $subnav-width;
-  background-color: #f4f4f4;
-  border-right: 2px solid gray;
   padding-right: calc(#{$spacing-unit} / 2);
   margin: 0;
+  margin-left: calc(#{$spacing-unit} / 2);
   text-align: $subnav-align;
-  height: 100%;
   position: fixed;
+  height: 100%;
 
-  @include media-query($on-palm) {
+  @include media-query($on-laptop) {
     visibility: hidden;
   }
 }
 
 .wrapper-adding {
   flex: 1;
-  margin-left: 0px;
-  padding-left: calc(#{$subnav-width} + #{$spacing-unit});
-  min-height: calc(100vh - 16vh);
+  text-align: justify;
 
   @include media-query($on-palm) {
     padding-left: calc(#{$spacing-unit} / 2);

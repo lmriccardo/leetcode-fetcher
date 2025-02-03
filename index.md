@@ -3,12 +3,28 @@ layout: default
 title: Leetcode Fetcher
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse accumsan dictum est, nec dapibus mauris eleifend eget. Nam at lectus eu elit tristique mollis hendrerit aliquam quam. Cras dui urna, interdum quis dictum quis, convallis eget est. In a vestibulum leo, et suscipit risus. Cras feugiat lobortis nisl lobortis ullamcorper. Aenean neque augue, tempor nec vehicula eu, pharetra ac enim. Ut tincidunt finibus neque porta scelerisque. Donec tempus, diam vitae rutrum dictum, diam nibh ultrices libero, a mollis lorem magna sed nulla. Proin tortor turpis, tempus nec tortor at, sollicitudin fringilla quam. Quisque a nibh viverra, consectetur velit in, finibus nisl. Mauris ultricies nisi quis interdum aliquam. Vivamus maximus lacus ultrices, convallis massa non, ullamcorper ante.
+# 1. Introduction ✨
 
-Ut nec fermentum risus. Etiam ornare elit id turpis sodales, quis aliquam ipsum vestibulum. Nullam ornare ante eu aliquam eleifend. Nullam mollis nibh at lobortis auctor. Mauris imperdiet, neque id condimentum ultricies, lacus nisi laoreet massa, id rutrum risus sem sed nisl. Proin sit amet dignissim libero. In sagittis ultricies metus, id bibendum erat fermentum a. Nam euismod in metus at consequat. Maecenas bibendum enim sit amet porta viverra. Maecenas sit amet mauris tellus. Aenean eget mi urna. Sed convallis, tellus quis tempus tincidunt, turpis ante tincidunt ligula, non lacinia felis lorem sit amet ligula.
+**Leetcode Fetcher** is a *CLI* (Command-Line Interface) Application that aims to provide an easy way to *download*, *test*, *submit* and *solve* leetcode problems locally. All the operations are performed exploiting the underneath [GraphQL](https://graphql.org) and [REST](https://it.wikipedia.org/wiki/Representational_state_transfer) API of leetcode. The entire application is written in [TypeScript](https://www.typescriptlang.org/) and uses [NPM](https://www.npmjs.com/) as its packets manager, building and distribution tool. 
 
-Fusce quis augue sem. Morbi feugiat pharetra mollis. Proin volutpat varius erat nec tristique. Curabitur malesuada, tortor nec ultricies commodo, lorem sapien malesuada turpis, nec volutpat sapien sem at tortor. Aenean condimentum imperdiet diam, eget cursus felis. Donec nisl augue, luctus posuere dapibus vitae, sollicitudin eu metus. Nulla sed neque pellentesque felis tempus consectetur. Cras non ligula sed erat blandit cursus sed at lectus. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent quis tempor libero, eu imperdiet nunc. Nulla sed dolor ligula. Quisque condimentum congue nibh. Donec dapibus maximus dui vitae euismod.
+*Why Leetcode Fetcher*? It happens, very often, that when working on a solution to a leetcode problem, I would like to write and test my code locally.
+It can depends on several reasons, including autocompletition, static code checking, custom tests, debugging and so on. Some of them are paid only, so
+it should be reasonable to migrate the code on a local IDE or text editor. In other words, it is better to remove all the previous warnings and focus only on implementing the most-optimized solution. 
 
-Ut lacinia vehicula commodo. Donec malesuada erat at tincidunt tempus. Nam eget condimentum ipsum, pellentesque vehicula magna. Nulla commodo, mauris porttitor tempor dignissim, sapien augue accumsan lacus, et ullamcorper arcu elit eget magna. Sed feugiat ligula et massa mattis lacinia. Maecenas posuere odio tellus, tristique varius sapien ullamcorper ut. Quisque sit amet massa scelerisque, ullamcorper nunc sed, dignissim risus. Nulla fringilla accumsan sapien pellentesque tempor. Nullam luctus tincidunt sagittis. Aenean sodales, diam vitae malesuada vestibulum, felis felis commodo justo, malesuada imperdiet turpis nunc nec purus.
+Leetcode Fetcher comes with a suite of commands able to:
 
-Phasellus tincidunt eget augue non cursus. Nullam ac dignissim ligula. Interdum et malesuada fames ac ante ipsum primis in faucibus. Phasellus venenatis leo lacus, vitae finibus ex varius quis. Aenean tempus iaculis libero, eu ornare tortor vulputate sit amet. Donec et ante rutrum, suscipit purus eu, tempus turpis. Vestibulum dictum non arcu eget iaculis. Aenean a dui eu nulla rhoncus interdum a ac lacus. Cras sit amet porta purus. Aliquam erat volutpat. Vivamus euismod vel metus et bibendum. Nunc elit velit, finibus vehicula diam vitae, rutrum malesuada lorem. Nulla consectetur laoreet tellus, sit amet sollicitudin ligula efficitur pharetra.
+- **fetch** a number, or just a single, problem/s from the problemset list of leetcode
+- **create** a local instance of a selected problem, thus downloading the description, tests and the provided code snippet
+- **test** a solution using custom tests, then returning back the results
+- **submit** a solution to the remote API, then retuning back the results
+- **inspect** a given user, or the current logged one
+
+The last deployed version of *leetcode-fetcher* is [v0.1.1](https://github.com/lmriccardo/leetcode-fetcher/releases/tag/v0.1.1) available on GitHub, NPM and the Docker Hub. 
+
+# 2. Acknowledgments ❤️
+
+- [**LeetCode**](https://leetcode.com) for provinding this awesome platform
+- [**chalk**](https://www.npmjs.com/package/chalk) for adding coloring to the application
+- [**prompt**](https://www.npmjs.com/package/prompt) for the beautiful command-line prompt
+- [**puppeteer**](https://www.npmjs.com/package/puppeteer) for the high-level browser control API
+- [**turndown**](https://www.npmjs.com/package/turndown) for the markdown-HTML conversion tool

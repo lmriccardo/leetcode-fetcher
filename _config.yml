@@ -3,6 +3,7 @@ email: riccardo.lamarca98@gmail.com
 description: >-
   Leetcode Fetcher is a CLI Application to interact with leetcode API
   in order to fetch problems locally, test and submit solutions.
+
 domain: "lmriccardo.github.io"
 baseurl: "/leetcode-fetcher"
 url: "https://lmriccardo.github.io"
