@@ -10,7 +10,26 @@
     <main class="page-content" aria-label="Content">
       <div class="page-content-wrapper">
         <div class="sub-nav page-content-col">
-          {{ page.url }}
+          {% assign next_links = site.data.sidebar.sidebar_links[page.url].next %}
+          {% assign prev_links = site.data.sidebar.sidebar_links[page.url].previous %}
+
+          {% if prev_links %}
+            <h3><strong>Previous:</strong></h3>
+            <ul>
+              {% for link in prev_links %}
+                <li><a href="{{ link.url | relative_url }}">{{ link.name }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if next_links %}
+            <h3><strong>Next:</strong></h3>
+            <ul>
+              {% for link in next_links %}
+                <li><a href="{{ link.url | relative_url }}">{{ link.name }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
         </div>
         <div class="wrapper wrapper-adding">
           {{ content }}

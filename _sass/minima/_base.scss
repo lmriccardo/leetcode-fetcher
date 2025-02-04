@@ -191,7 +191,18 @@
    }
  }
  
- 
+@media (min-width: 1500px) {
+  .wrapper {
+    max-width: 1000px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .wrapper {
+    max-width: -webkit-calc(#{$content-width} - (#{$spacing-unit} * 2));
+    max-width:         calc(#{$content-width} - (#{$spacing-unit} * 2));
+  }
+}
  
  /**
   * Clearfix

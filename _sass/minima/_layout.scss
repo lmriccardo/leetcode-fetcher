@@ -196,6 +196,36 @@
   @include media-query($on-laptop) {
     visibility: hidden;
   }
+
+  @include media-query(1620px) {
+    width: $min-subnav-width;
+  }
+}
+
+.sub-nav h3 {
+  font-family: $base-font-family;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.sub-nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sub-nav li {
+  margin-bottom: 8px;
+}
+
+.sub-nav a {
+  font-family: $base-font-family;
+  text-decoration: none;
+  color: $text-color;
+}
+
+.sub-nav a:hover {
+  text-decoration: underline;
+  color: #b5741f;
 }
 
 .wrapper-adding {

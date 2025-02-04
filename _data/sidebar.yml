@@ -1,0 +1,23 @@
+sidebar_links:
+  "/":
+    next:
+      - name: Installation
+        url: "/install/"
+      
+      - name: Application Overview
+        url: "/run/"
+
+      - name: Commands
+        url: "/commands/"
+  
+  "/install/":
+    next:
+      - name: Application Overview
+        url: "/run/"
+
+      - name: Commands
+        url: "/commands/"
+    
+    previous:
+      - name: Home
+        url: "/"
