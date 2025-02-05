@@ -184,7 +184,7 @@
    @extend %clearfix;
  
    @include media-query($on-laptop) {
-     max-width: 100vw;
+     max-width: 90%;
      padding-right: $spacing-unit / 2;
      padding-left: $spacing-unit / 2;
      margin-left: unset
@@ -197,7 +197,7 @@
   }
 }
 
-@media (max-width: 1500px) {
+@media (max-width: 1500px) and (min-width: 800px) {
   .wrapper {
     max-width: -webkit-calc(#{$content-width} - (#{$spacing-unit} * 2));
     max-width:         calc(#{$content-width} - (#{$spacing-unit} * 2));

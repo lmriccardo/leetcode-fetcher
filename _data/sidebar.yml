@@ -21,3 +21,36 @@ sidebar_links:
     previous:
       - name: Home
         url: "/"
+
+  "/run/":
+    next:
+      - name: Commands
+        url: "/commands/"
+
+    previous:
+      - name: Home
+        url: "/"
+
+      - name: Installation
+        url: "/install/"
+
+  "/commands/":
+    previous:
+      - name: Application Overview
+        url: "/run/"
+
+    next:
+      - name: Generic
+        url: /commands/generic/
+
+      - name: Problems
+        url: /commands/problems/
+      
+      - name: User
+        url: /commands/user/
+
+      - name: Submission
+        url: /commands/submissions/
+
+      - name: State
+        url: /commands/state/

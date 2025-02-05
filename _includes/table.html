@@ -1,0 +1,137 @@
+<style type="text/css">
+  .tg  {border-collapse:collapse;border-spacing:0;}
+  .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+    overflow:hidden;padding:10px 5px;word-break:normal;}
+  .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+    font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+  .tg .tg-lboi{border-color:inherit;text-align:left;vertical-align:middle}
+  .tg .tg-05b8{background-color:#c0c0c0;border-color:inherit;font-size:16px;text-align:center;vertical-align:middle}
+  .tg .tg-9wq8{border-color:inherit;text-align:center;vertical-align:middle}
+  .tg .tg-ko03{background-color:#9b9b9b;border-color:inherit;font-size:18px;font-weight:bold;text-align:center;vertical-align:middle}
+  .tg .tg-wyum{background-color:#9b9b9b;border-color:inherit;font-size:18px;text-align:center;vertical-align:middle}
+  .tg .tg-7tf0{border-color:inherit;font-family:"Courier New", Courier, monospace !important;text-align:center;vertical-align:middle}
+  .tg .tg-vrnj{border-color:inherit;font-style:italic;text-align:center;vertical-align:middle}
+  .tg .tg-m1hd{background-color:#c0c0c0;border-color:inherit;font-size:16px;font-style:italic;text-align:center;text-decoration:underline;
+    vertical-align:middle}
+  .tg .tg-0a7q{border-color:inherit;text-align:left;vertical-align:middle}
+  .tg .tg-cg2p{background-color:#C0C0C0;border-color:inherit;font-size:16px;font-style:italic;text-align:center;text-decoration:underline;
+    vertical-align:middle}
+  </style>
+  <table class="tg" style="table-layout: fixed"><colgroup>
+  <col style="width: 88px">
+  <!-- <col style="width: 353px">
+  <col style="width: 987px"> -->
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="tg-wyum"><span style="font-weight:bold">Name</span></th>
+      <th class="tg-wyum"><span style="font-weight:bold">Syntax</span></th>
+      <th class="tg-ko03">Description</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td class="tg-05b8" colspan="3"><span style="font-style:italic;text-decoration:underline">Generic</span></td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Help</span></td>
+      <td class="tg-7tf0">help [cmd1 cmd2 ...]</td>
+      <td class="tg-lboi">Shows the helper message for each given command. If no command is provided, consider all.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Clear</span></td>
+      <td class="tg-7tf0">clear</td>
+      <td class="tg-lboi">Clears the screen content</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj">Quit</td>
+      <td class="tg-7tf0">quit</td>
+      <td class="tg-lboi">Quits the application</td>
+    </tr>
+    <tr>
+      <td class="tg-m1hd" colspan="3">Problems</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">List</span></td>
+      <td class="tg-7tf0">list</td>
+      <td class="tg-lboi">Locally fetches a number of problems from leetcode. The search is filtered using the <span style="font-style:italic">variables</span> set with `set` or `unset`</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Fetch</span></td>
+      <td class="tg-7tf0">fetch &lt;NAME|ID&gt; &lt;value&gt;</td>
+      <td class="tg-lboi">Fetch locally a single problem from remote. The problem is specified either using the title-slug or the remote ID.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Detail</span></td>
+      <td class="tg-7tf0">detail &lt;id/idx&gt; [BYID|BYIDX]</td>
+      <td class="tg-lboi">Print details about a specified problem. A problem is specified either by local indexing, or remote question IDs.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Create</span></td>
+      <td class="tg-7tf0">create &lt;idx&gt;</td>
+      <td class="tg-0a7q">Create a problem instance in the provided target folder (which is a variable). The problem is specified only by the local index which means that must already exists locally.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Daily</span></td>
+      <td class="tg-7tf0">daily [create]</td>
+      <td class="tg-lboi">Fetch the current daily question and optionally create an instance</td>
+    </tr>
+    <tr>
+      <td class="tg-cg2p" colspan="3">User</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Login</span></td>
+      <td class="tg-7tf0">login</td>
+      <td class="tg-lboi">Open a browser to perform the login and starts a leetcode session.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Inspect</span></td>
+      <td class="tg-7tf0">inspect [USERNAME]</td>
+      <td class="tg-lboi">Inspect a given user profile if it exists, or the current logged one</td>
+    </tr>
+    <tr>
+      <td class="tg-cg2p" colspan="3">Submissions</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Watch</span></td>
+      <td class="tg-7tf0">watch &lt;question-idx|daily&gt;</td>
+      <td class="tg-lboi">Cache the given problem for future tests or submissions. An instance of the given problem is create if it does not exists.</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Test</span></td>
+      <td class="tg-7tf0">test</td>
+      <td class="tg-lboi">Test the cached problem with leetcode remotely (see `watch`)</td>
+    </tr>
+    <tr>
+      <td class="tg-vrnj"><span style="font-style:italic">Submit</span></td>
+      <td class="tg-7tf0">submit</td>
+      <td class="tg-lboi">Submit a solution of the cached problem in leetcode (see `watch`)</td>
+    </tr>
+    <tr>
+      <td class="tg-cg2p" colspan="3">State</td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Set</span></td>
+      <td class="tg-7tf0">set [VAR value ...]</td>
+      <td class="tg-lboi">Set the value of the specified variable. To inspect available variables use the `show` command.</td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Unset</span></td>
+      <td class="tg-7tf0">unset [VAR1 VAR2 ...]</td>
+      <td class="tg-lboi">Unset variables bringing back to their default values.</td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Show</span></td>
+      <td class="tg-7tf0">show [SENSITIVE]</td>
+      <td class="tg-lboi">Shows values and informations about the application state and variables. If sensitive is given then also user cookies are shown.</td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Save</span></td>
+      <td class="tg-7tf0">save FILEPATH</td>
+      <td class="tg-lboi">Saves the current state into a json file</td>
+    </tr>
+    <tr>
+      <td class="tg-9wq8"><span style="font-style:italic">Load</span></td>
+      <td class="tg-7tf0">load FILEPATH</td>
+      <td class="tg-lboi">Loads the state from a json file</td>
+    </tr>
+  </tbody></table>
