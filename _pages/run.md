@@ -6,7 +6,7 @@ permalink: /run/
 
 # Application Overview 🔎
 
-This page contains a general overview on how the application works. The following content assumes that you have already installed the application, if not please consult the [Installation Page](./install.md). 
+This page contains a general overview on how the application works. The following content assumes that you have already installed the application, if not please consult the [Installation Page]({{site.baseurl}}/install/). 
 
 ## 1. Running the application
 
@@ -40,4 +40,4 @@ Leetcode-Fetcher is a *command-based* application, meaning that everytime it wil
 [DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): 
 ```
 
-That is, the first command we can provide is the `help` command. It provides a general overview of all possible commands a user can input to the application, each of them with optional subcommands or arguments. You can learn more about commands in the [Command Page](./commands/index.md), so for now let's keep it simple.
+That is, the first command we can provide is the `help` command. It provides a general overview of all possible commands a user can input to the application, each of them with optional subcommands or arguments. You can learn more about commands in the [Command Page]({{site.baseurl}}/commands/), so for now let's keep it simple.

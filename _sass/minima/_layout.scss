@@ -234,6 +234,7 @@
 
   @include media-query($on-palm) {
     padding-left: calc(#{$spacing-unit} / 2);
+    text-align: unset;
   }
 }
 
