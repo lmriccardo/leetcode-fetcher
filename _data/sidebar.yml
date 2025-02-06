@@ -54,3 +54,13 @@ sidebar_links:
 
       - name: State
         url: /commands/state/
+
+  "/commands/generic/":
+    previous:
+      - name: Commands
+        url: "/commands/"
+
+  "/commands/problems/":
+    previous:
+      - name: Commands
+        url: "/commands/"

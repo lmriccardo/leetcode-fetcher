@@ -2,7 +2,6 @@
  * Site header
  */
  .site-header {
-  border-top: 5px solid $grey-color-dark;
   border-bottom: 1px solid $grey-color-light;
   min-height: $spacing-unit * 1.865;
   background-color: $background-color;
@@ -52,7 +51,7 @@
   @include media-query($on-palm) {
     position: absolute;
     top: 9px;
-    right: $spacing-unit / 2;
+    right: $spacing-unit;
     background-color: $background-color;
     border: 1px solid $grey-color-light;
     border-radius: 5px;
@@ -177,11 +176,22 @@
 .page-content-wrapper {
   @extend %clearfix;
   display: flex;
+
+  @include media-query($on-laptop) {
+    display: unset;
+  }
 }
 
 .page-content-col {
   float: left;
   border-right: 1px solid $grey-color-light;
+
+  @include media-query($on-laptop) {
+    float: unset;
+    border: 1px solid $grey-color-light;
+    border-radius: 5px;
+    padding-top: 10px;
+  }
 }
 
 .sub-nav {
@@ -194,10 +204,17 @@
   height: 100%;
 
   @include media-query($on-laptop) {
-    visibility: hidden;
+    width: unset;
+    position: unset;
+    text-align: center;
+    margin: 30px;
+    margin-top: 0px;
+    padding-right: unset;
   }
+}
 
-  @include media-query(1620px) {
+@media (max-width: 1620px) and (min-width: $on-laptop) {
+  .sub-nav {
     width: $min-subnav-width;
   }
 }
@@ -210,7 +227,7 @@
 
 .sub-nav ul {
   list-style: none;
-  padding: 0;
+  margin-left: 0px;
 }
 
 .sub-nav li {
@@ -221,6 +238,10 @@
   font-family: $base-font-family;
   text-decoration: none;
   color: $text-color;
+
+  @include media-query($on-laptop) {
+    text-decoration: underline;
+  }
 }
 
 .sub-nav a:hover {
@@ -233,7 +254,7 @@
   text-align: justify;
 
   @include media-query($on-palm) {
-    padding-left: calc(#{$spacing-unit} / 2);
+    padding-left: $spacing-unit;
     text-align: unset;
   }
 }
@@ -241,7 +262,11 @@
 .page-content {
   padding: $spacing-unit 0;
   flex: 1;
-  margin-top: $spacing-unit * 1.865
+  margin-top: $spacing-unit * 1.865;
+
+  @include media-query($on-laptop) {
+    flex: unset;
+  }
 }
 
 .page-heading {

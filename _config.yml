@@ -10,6 +10,12 @@ url: "https://lmriccardo.github.io"
 github_username: lmriccardo
 linkedin_username: riccardolamarca98
 
+markdown: kramdown
+kramdown:
+  input: GFM
+  auto_ids: true
+  syntax_highlighter: rouge
+
 # Build settings
 theme: minima
 plugins:

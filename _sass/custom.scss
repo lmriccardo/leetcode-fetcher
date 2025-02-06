@@ -1,0 +1,60 @@
+
+// Alert Boxes 
+.info, .warning, .bug {
+  padding: 10px;
+  padding-top: 40px;
+  border-left: 5px solid;
+  border-radius: 6px;
+  position: relative;
+  color: rgb(48, 47, 47);
+  z-index: -1;
+}
+
+.info::before, .warning::before, .bug::before {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 3px;
+}
+
+.warning {
+  background-color: rgb(248, 213, 108);
+  border-left-color: orange;
+}
+
+.warning::before {
+  content: "WARNING";
+  background: orange;
+}
+  
+.info {
+  background-color: rgb(211, 237, 245);
+  border-left-color:blue;
+}
+
+.info::before {
+  content: "INFO";
+  background: rgb(82, 128, 236);
+}
+
+.bug {
+  background-color: rgb(239, 133, 133);
+  border-left-color: darkred;
+}
+
+.bug::before {
+  content: "BUG";
+  background: rgb(245, 79, 79);
+}
+
+// Center 
+.center {
+  padding-top: 5px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
