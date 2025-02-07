@@ -111,7 +111,9 @@ An example of HTTP POST Request body could be:
 }
 ```
 
-Here is an output example when running the `list` command:
+All filters are configurable by setting some variables belonging to the *state* of the application. If you are interested, checkout the [`set` command]({{site.baseurl}}/commands/state#1-set-command) in the corresponding *State* page. 
+
+For now, leaving the state as it is, here is an output example when running the `list` command:
 
 ```bash
 [DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): list
@@ -133,8 +135,213 @@ The **Idx** column display the index of the corresponding problem in the applica
 
 ## 2. Fetch command
 
+**Syntax:** `fetch <NAME|ID> VALUE`
+
+The `fetch` command is used to extract a single precise problem from the list available on LeetCode. It takes two required parameters. The first one, identified by either `NAME` or `ID`, specify the content of the other one, i.e., the `VALUE` parameter which is user to filter which problem needs to be fetched. 
+
+If `NAME` is given, then the `VALUE` parameter must coincides with the *title-slug* of the problem we want. The title-slug (or *titleSlug* in some GraphQL queries), identifies the title of the problem formatted as lower-case letters with spaces replaced by the `-` symbol. For example, the *Two Sum* problem has as title-slug *two-sum* or the *Letter Combinations of a Phone Number* corresponds to *letter-combination-of-a-phone-number*. Now, some of them might not follow the same rule, hence for any further detail consider using the [`detail`](#3-detail-command) command. 
+
+On the other hand, if the `ID` value is given, then the `VALUE` parameter must coincides with the ID of the problem. 
+
+In this case, two different GraphQL queries are used. The first is:
+
+```graphql
+#graphql
+query selectProblem($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    questionId
+    questionFrontendId
+    title
+    titleSlug
+    content
+    isPaidOnly
+    difficulty
+    similarQuestions
+    exampleTestcaseList
+    topicTags {
+      name
+      slug
+    }
+    codeSnippets {
+      lang
+      langSlug
+      code
+    }
+    stats
+    hints
+    solution {
+      id
+      canSeeDetail
+      paidOnly
+      hasVideoSolution
+      paidOnlyVideo
+    }
+    status
+    sampleTestCase
+    mysqlSchemas
+    enableRunCode
+    enableTestMode
+    enableDebugger
+    note
+  }
+}
+```
+
+> The `selectProblem` query represented previously it is not the actual used query. In successive versions, the current query will be changed with this one. This will not impact the amount of useful gathered informations, it will just reduce the number of data provided by the API. 
+{:.info}
+
+While the second one is already exposed in the [`list` command section](#1-list-command). Differently from the previous explained query, this new one gathers detailed information about a single question, which are way more useful with respect to those provided by the list query. However, some informations from the other query is not present in this one, so we must keep both. We will see this query being used elsewhere, but in this case it is only required in case the `NAME` option is passed to the command. Given the name we fetch the Question *Frontend ID* from the response and then use the other query to obtain what the application need. 
+
+```json
+// selectProblem Query Request body
+{
+    "query": "<selectProblem Query>",
+    "variables": { "titleSlug": "two-sum" }
+}
+
+// problemsetQuestionList Query Request body
+{
+    "query": "<problemsetQuestionList Query>",
+    "variables": { 
+        "categorySlug": "algorithm", 
+        "limit": 1, 
+        "skip": "<the ID of the two-sum problem - 1>",
+        "filters": {}
+    }
+}
+```
+
+The normal output does not diverge from the `list` command output. 
+
+However, if the question is already fetched a green message should appear:
+
+```
+[INFO] Question seems already fetched
+```
+
+Any other outputs, different from the previous one, represents errors.
+
+> It happens that, when using the `fetch` commands and the `ID` option, problems are fetched no matter if they are already present in the application or not. This will be fixed in versions `> v0.1.1`. 
+{:.warning}
+
+
 ## 3. Detail command
+
+**Syntax:** `detail VALUE [BYID|BYIDX]`
+
+The `detail` command is used to obtain more useful informations about a given problem rather than with previous commands. It has one required and one optional parameters. The last one identifies the meaning of the first parameter. In particular, if `BYID` is given than `VALUE` represents the frontend id of the question. On the other hand, if `BYIDX` is given, `VALUE` indentifies the position inside the locally fetched list of problems. This distinction has been made to ensure already fetched problems not being queried multiple times. Since the second option is optional, if empty by default `BYIDX` is used.
+
+The currently used query is the `list` one. Here is an example of the output:
+
+```bash
+[DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): list
+[DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): detail 0
+```
+
+![Detail Command Output]({{site.baseurl}}/assets/images/detail_command.png){:.center}
+
+> The output of the command is still in an early development stage since it does not provide the entirety of the informations.
+{:.bug}
+
+Without changing any filter, the previous sequence of commands give the same output of:
+
+```bash
+[DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): detail 1 BYID
+```
 
 ## 4. Create command
 
+**Syntax:** `create [IDX]`
+
+The `create` command, creates a *local instance* of a fetched problem identified by the local index `IDX`, or several local instances, one for each fetched problem, if not index is provided. *Where is this index located*? Inspecting the current state of the application using the [`show` command]({{site.baseurl}}/commands/state#3-show-command), it is possible to visualize all locally fetched problems and take the corresponding local index. 
+
+*What is a local instance of a problem*? In this context, an **instance** is just a folder, which name follows the syntax `<id>-<titleSlug>`, that contains four files:
+
+- `README.md` containing the description of the problem in Markdown format
+- `index.html` containing the description of the problem in HTML format
+- `solution.py`, a Python file containing the solution (the user should written)
+- `tests.txt`, a Plain Text file containing the test cases provided by LeetCode
+
+Here is an example of the `solution.py` file content for the *two-sum* problem:
+
+```python
+"""
+QUESTION TITLE: Two Sum
+QUESTION LINK: https://leetcode.com/problems/two-sum
+QUESTION TAGS: Array, Hash Table
+QUESTION LEVEL: Easy
+"""
+
+from typing import *
+
+# SOLUTION STARTS
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        ...
+
+```
+
+and the `tests.txt` file:
+
+```
+[2,7,11,15],,9
+[3,2,4],,6
+[3,3],,6
+```
+
+To fetch all informations in order to create the instance, this command uses the `selectProblem` GraphQL query previously described. 
+
+Here is an example of the output:
+
+```bash
+[DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): fetch NAME two-sum
+[DD/MM/YYYY, HH:MM:SS PM/AM] >>> (Type help for commands): create 0
+[INFO] Result written in folder: problems\1-two-sum
+```
+
+Let me explain what's happened. Assume a clean environment, e.g., a first start. First, the `fetch` command has fetched the *two-sum* problem locally into the application state. Since it is the only question available it has index `0`. Finally, the `create` command with index `0` has created a local instance of the problem. Notice that we would have obtained the same result without providing any index (there is just one question right now). 
+
+From the output we can see that the instance folder has been successfully created and placed into a `problems` folder. This directory is customizable by the user and, again, it is a variable inside the state of the application (checkout the usual [`set` command]({{site.baseurl}}/commands/state#1-set-command)). At the end, each instance will be saved into a path `<folder>/<id>-<titleSlug>`.
+
+> Notice that **Python** is the only target language currently available.
+{:.warning}
+
 ## 5. Daily command
+
+**Syntax:** `daily [create]`
+
+The `daily` command can be used to fetch currently available daily question and, using the optional `create` option, to create a local instance. Note that the daily question is automatically fetched when the application starts, hence there is no need to call the `daily` command without the `create` parameter, unless the problem has been remotely updated during the session.
+
+The following GraphQL query is used to fetch daily questions:
+
+```graphql
+#graphql
+query questionOfToday {
+  activeDailyCodingChallengeQuestion {
+    date
+    userStatus
+    link
+    question {
+      acRate
+      difficulty
+      freqBar
+      questionFrontendId
+      isFavor
+      paidOnly: isPaidOnly
+      status
+      title
+      titleSlug
+      hasVideoSolution
+      hasSolution
+      topicTags {
+        name
+        id
+        slug
+      }
+    }
+  }
+}
+```
+
+> The current daily question is not shown in the current state, indeed it is save into it.
+{:.warning}

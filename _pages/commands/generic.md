@@ -10,7 +10,7 @@ This group contains commands that can be defined *generic*, in the sense that th
 
 ## 1. Help command
 
-**Syntax**: `help [cmd1 cmd2 ...]`
+**Syntax**: `help [CMD1 CMD2 ...]`
 
 The `help` command is useful to obtain a general overview of all possible commands a user can submit to the application. As already you might know, commands are divided into groups which is also the default formatting of the command output. On the other hand, if you would like to gain more information about a specific command, or a speficic group of commands, you can pass it as arguments to the `help` command itself.
 
