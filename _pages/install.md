@@ -12,7 +12,7 @@ or using [Docker containers](https://www.docker.com/resources/what-container/), 
 For method (1) and (3) there are two important requirements: [**NodeJS**](https://nodejs.org/en/download) version `>= 22.13.0` 
 and [**npm**](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) version `>= 11.1.0`.
 
-## 1. Cloning the repository and install locally
+## 1. Install locally from repo
 
 Using this method, you will clone the entire repository into a new folder called *leetcode-fetcher*. Once entered the folder, you will need to install all the
 dependencies using the *npm* command. The result of the previous operation will be a new folder called *node_modules* located at the root of the repository. This

@@ -64,3 +64,18 @@ sidebar_links:
     previous:
       - name: Commands
         url: "/commands/"
+
+  "/commands/user/":
+    previous:
+      - name: Commands
+        url: "/commands/"
+
+  "/commands/submissions/":
+    previous:
+      - name: Commands
+        url: "/commands/"
+
+  "/commands/state/":
+    previous:
+      - name: Commands
+        url: "/commands/"

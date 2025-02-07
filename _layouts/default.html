@@ -34,6 +34,24 @@
         <div class="wrapper wrapper-adding">
           {{ content }}
         </div>
+        <div class="sub-right page-content-col">
+          <h3><strong>Sections:</strong></h3>
+          <ul id="toc"></ul>
+          <script>
+            document.addEventListener("DOMContentLoaded", function() {
+              const h2Element = document.querySelectorAll("h2[id]");
+              const tocList = document.getElementById("toc");
+              h2Element.forEach(h2 => {
+                let li = document.createElement("li");
+                let a = document.createElement("a");
+                a.href = `#${h2.id}`;
+                a.textContent = h2.textContent;
+                li.appendChild(a);
+                tocList.appendChild(li);
+              });
+            })
+          </script>
+        </div>
       </div>
     </main>
 

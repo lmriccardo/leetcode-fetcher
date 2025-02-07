@@ -219,6 +219,18 @@
   }
 }
 
+.sub-right {
+  @extend .sub-nav;
+  right: 0px;
+  border-left: 1px solid $grey-color-light;
+  text-align: left;
+  padding-left: 15px;
+
+  @include media-query($on-laptop) {
+    visibility: hidden;
+  }
+}
+
 .sub-nav h3 {
   font-family: $base-font-family;
   font-size: 18px;

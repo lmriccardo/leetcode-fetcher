@@ -58,3 +58,8 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+.resized-img {
+  width: 700px;  /* Set width */
+  height: auto;  /* Maintain aspect ratio */
+}
