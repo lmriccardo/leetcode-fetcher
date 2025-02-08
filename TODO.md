@@ -22,6 +22,24 @@
 ### Release - v0.2.0
 ---
 
+#### Bug Fix
+
+- [x] Remove, or find a way, to login within Docker (browser mode not possible)
+- [x] Fixed a the `list` command bug when setting DIFFICULTY != from ALL
+- [ ] Check that when showin' the problems, it actually labels downloaded ones
+- [ ] Check that `fetch` command does not append already fetched problems
+- [ ] When loading a state, the loaded problems are appended to the existing ones
+- [ ] The daily question does not show up when looking at the state
+- [ ] `inspect` command output has problems with submissions timestamps
+
+#### Refactoring
+
+- [ ] Refactors the entire application state
+- [ ] Refactors some GraphQL query (to make them smaller than now)
+- [ ] Refactors the `detail` output
+
+#### New Features
+
 - [ ] Implement `show` subcommands
 
   + With no parameter shows the state and variables (no problems)
@@ -29,11 +47,19 @@
   + `downloaded`: shows only downloaded problems
   + `user`: shows current user statistics
 
-- [ ] Check that `fetch` command does not append already fetched problems
-- [ ] Check that when showin' the problems, it actually labels downloaded ones
-- [ ] Better printing for commands
-- [ ] When loading a state, the loaded problems are appended to the existing ones
 - [ ] Add the `force` subcommand to `login`, to the force the login
-- [x] Remove, or find a way, to login within Docker (browser mode not possible)
 - [?] Handle Third-Party Login, e.g., Github etc ...
-- [x] Fixed a the `list` command bug when setting DIFFICULTY != from ALL
+
+### Release - v0.3.0
+---
+
+#### Bug Fix
+
+#### Refactoring
+
+- [ ] Refactors commands syntax to `<group> <command> <...args>`
+
+#### New Features
+
+- [ ] Better printing for commands
+- [ ] Supports for other programming languages
