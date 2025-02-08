@@ -29,9 +29,9 @@ Finally, to run the application the command is `npm run app`.
 ## 2. Using Docker Containers
 
 The second alternative leverages the Docker container toolbox to run a **containerized** leetcode fetcher version. In the repository is also contained
-the [*Dockerfile*](https://github.com/lmriccardo/leetcode-fetcher/blob/master/Dockerfile) used the build the image required to create the container. Hence,
+the [*Dockerfile*](https://github.com/lmriccardo/leetcode-fetcher/blob/master/Dockerfile) used to build the image required to create the container. Hence,
 if everything is up to date to the last version, you should be able to modify and build the image by your own and start the container. However, it is **highly**
-suggested to use the ones in the [*Docker Hub*](https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general), in particular, the one tagged **latest** contains the latest features and bug fixes.
+recommended to use the **latest** one in the [*Docker Hub*](https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general), since it comes with the latest features and bug fixes.
 
 There should be no need but, to use this methodology, *Docker* (or Docker Desktop) must be installed in the system. 
 
@@ -42,9 +42,9 @@ docker run --rm -it -v ./:/leetcode lmriccardo/leetcode-fetcher:latest
 ```
 
 This will start a new container in *interactive* (`-i`) mode with an active *terminal session* (`-t`) based on the provided Docker Image. The `--rm` option is
-useful the entirely remove the container once the application stops. Please notice that the `-v` option is not optional at all, **it must be used as previously shown** otherwise the application might not work well. This option creates a [*bind mount*](https://docs.docker.com/engine/storage/bind-mounts/) from the current
-working folder on the host to the `/leetcode` folder in the container. It is important that the target folder remains `/leetcode` since it is the working folder,
-and so the entry folder, of the user inside the container. This mount is required so that all problem instances that will be created inside the container will persist
+useful to entirely remove the container once the application stops. Please notice that the `-v` option is not optional at all, **it must be used as previously shown** otherwise the application might not work well. This option creates a [*bind mount*](https://docs.docker.com/engine/storage/bind-mounts/) from the current
+working folder on the host to the `/leetcode` folder in the container. It is important that the target folder remains `/leetcode` since it is the working directory,
+and so the entry point, of the user inside the container. This mount is required so that all problem instances that will be created inside the container will persist
 in the current folder (on the host machine), instead of being removed once the container stops.
 
 These are the three most important **DO NOT** points:

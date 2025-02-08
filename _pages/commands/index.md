@@ -10,7 +10,7 @@ This documentation page aims to illustrate each command group and, for each of t
 
 ## 1. Command groups
 
-As already being said, running the `help` shows all possible commands (with optional or required parameters) that can be submitted to the application. As you might notice, each batch of commands is separated by a title. This string represents the name of the **group** to which then entire batch belongs to. That is, commands are divided into groups: *Generic*, *Problems*, *User*, *Submissions* and *State*. 
+As already being said, running the `help` shows all possible commands (with optional or required parameters) that can be submitted to the application. As you might notice, each batch of commands is separated by a title. This string represents the name of the **group** to which the entire batch belongs to. That is, commands are divided into groups: *Generic*, *Problems*, *User*, *Submissions* and *State*. 
 
 The following table shows all possible commands for each existing group.
 

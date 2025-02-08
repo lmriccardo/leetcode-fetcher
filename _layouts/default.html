@@ -35,12 +35,18 @@
           {{ content }}
         </div>
         <div class="sub-right page-content-col">
-          <h3><strong>Sections:</strong></h3>
+          <h3 id="toc-header"><strong>Sections:</strong></h3>
           <ul id="toc"></ul>
           <script>
             document.addEventListener("DOMContentLoaded", function() {
               const h2Element = document.querySelectorAll("h2[id]");
               const tocList = document.getElementById("toc");
+              const tocHeader = document.getElementById("toc-header");
+
+              if (h2Element.length == 0) {
+                tocHeader.innerText = "";
+              }
+              
               h2Element.forEach(h2 => {
                 let li = document.createElement("li");
                 let a = document.createElement("a");

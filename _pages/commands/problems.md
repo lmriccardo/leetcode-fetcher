@@ -18,7 +18,7 @@ Before moving deeply into the details of each different command, although it is 
 
 The GraphQL specification does not require particular client-server protocols when sending API requests and responses, but HTTP is the most common choice because of its ubiquity, and with LeetCode this is the case. An HTTP server, to be compatible with GraphQL, must be able to handle HTTP POST Requests for query and mutation operations (optionally also GET). A classical GraphQL POST request look like this:
 
-```
+```http
 POST /graphql HTTP/1.1
 Host: https://leetcode.com
 Accept: */*
