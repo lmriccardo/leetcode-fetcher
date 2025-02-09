@@ -1,11 +1,12 @@
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
-import * as types from './types';
-import * as utils from './utils';
-import commands from './commands';
 import { daily_command } from './commands/problems';
+import commands from './commands';
 import constants from './constants';
 import chalk from 'chalk';
+import * as types from './types';
+import * as formats from './utils/formatter';
+import * as generic from './utils/general';
 
 const ExcuteCommandIfExists = async (
   command: string, state: types.AppStateData, 
@@ -17,7 +18,7 @@ const ExcuteCommandIfExists = async (
     (value: types.AppCommandData) : boolean => value.command === cmd_name);
 
   if (cmd_filter.length < 1) {
-    const error_str = utils.FormatString("No Command: {0}", command);
+    const error_str = formats.FormatString("No Command: {0}", command);
     console.error(chalk.redBright(error_str));
     return state;
   }
@@ -53,7 +54,7 @@ const PrintEntryView = () => {
 
   console.log(`@${chalk.gray("Author")}      ${author_name} <${author_email}>`)
   console.log(`@${chalk.gray("Repository")}  ${repo_url}`)
-  console.log(`@${chalk.gray("Version")}     v0.1.1`)
+  console.log(`@${chalk.gray("Version")}     v0.1.2`)
   console.log();
 }
 
@@ -61,8 +62,8 @@ export const RunApp = async () => {
   PrintEntryView();
 
   // Fetch the total number of problems for each difficulty
-  const nproblems = await utils.GetAllProblemsCount();
-  const totals = utils.ArraySum(...Object.values(nproblems));
+  const nproblems = await generic.GetAllProblemsCount();
+  const totals = generic.ArraySum(...Object.values(nproblems));
   const counts = {...nproblems, ALL: totals};
 
   // Initialize the app state

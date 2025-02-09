@@ -10,9 +10,7 @@ query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $fi
     questions: data {
       acRate
       difficulty
-      freqBar
       questionFrontendId
-      isFavor
       paidOnly: isPaidOnly
       status
       title
@@ -38,20 +36,18 @@ query questionOfToday {
     question {
       acRate
       difficulty
-      freqBar
       questionFrontendId
-      isFavor
       paidOnly: isPaidOnly
       status
       title
       titleSlug
-      hasVideoSolution
-      hasSolution
       topicTags {
         name
         id
         slug
       }
+      hasVideoSolution
+      hasSolution
     }
   }
 }
@@ -85,30 +81,17 @@ query selectProblem($titleSlug: String!) {
   question(titleSlug: $titleSlug) {
     questionId
     questionFrontendId
-    boundTopicId
     title
     titleSlug
     content
-    translatedTitle
-    translatedContent
     isPaidOnly
     difficulty
-    likes
-    dislikes
-    isLiked
     similarQuestions
     exampleTestcaseList
-    contributors {
-      username
-      profileUrl
-      avatarUrl
-    }
     topicTags {
       name
       slug
-      translatedName
     }
-    companyTagStats
     codeSnippets {
       lang
       langSlug
@@ -124,25 +107,6 @@ query selectProblem($titleSlug: String!) {
       paidOnlyVideo
     }
     status
-    sampleTestCase
-    metaData
-    judgerAvailable
-    judgeType
-    mysqlSchemas
-    enableRunCode
-    enableTestMode
-    enableDebugger
-    envInfo
-    libraryUrl
-    adminUrl
-    challengeQuestion {
-      id
-      date
-      incompleteChallengeCount
-      streakCount
-      type
-    }
-    note
   }
 }`;
 

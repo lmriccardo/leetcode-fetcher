@@ -9,11 +9,11 @@
  *  - daily  [Fetch the current daily question]
  */
 
-import * as types from '../types';
-import * as utils from '../utils';
-import * as lc from '../leetcode';
 import { Spinner } from '../pprint';
 import chalk from 'chalk';
+import * as types from '../types';
+import * as lc from '../leetcode';
+import * as generic from '../utils/general';
 
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
@@ -46,12 +46,28 @@ const ListCommand = async (_: string[], state: types.AppStateData)
 
   if (!problems_data) return state;
 
+  spinner.changeMessage("Fetching each problem details");
+  spinner.start();
+
+  // Then for each problem fetched, gathers other details
+  const fetched_problems: types.FetchedProblems[] = [];
+  problems_data.problemsetQuestionList.questions.forEach(
+    async (value: types.GenericQuestionData) => 
+    {
+      const title = value.titleSlug;
+      const question_data = await lc.FetchQuestion({titleSlug: title});
+      if (question_data) {
+        fetched_problems.push(generic.MergeStructures(value, question_data));
+      }
+    }
+  )
+
   // Shows the problems and some informations
   utils.PrintUsedFilters(state.variables);
   await utils.PrintProblemsSummary(problems_data, state.variables);
 
   // Save the list of problems into the state
-  state.lastSelectedProblems = problems_data;
+  state.fetchedProblems = problems_data;
   return state;
 }
 

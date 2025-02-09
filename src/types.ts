@@ -1,90 +1,108 @@
 import { HTTPRequest, HTTPResponse } from "puppeteer";
 
-// Questions Data
+// ------------------------------------------------------------------
+// -------------------------- BASE TYPES ----------------------------
+// ------------------------------------------------------------------
 type Difficulty = 'All' | 'Easy' | 'Medium' | 'Hard';
 
 export interface QuestionTag {
   name: string;
   slug: string;
-  translatedName?: string;
 }
 
-export interface QuestionGenericData {
-  acRate: number;
-  difficulty: Difficulty;
-  freqBar?: string;
-  questionFrontendId: number;
-  isFavor: boolean;
-  isPaidOnly: boolean;
-  status?: string
-  title: string;
-  titleSlug: string;
-  topicTags: QuestionTag[];
-  hasSolution: boolean;
-  hasVideoSolution: boolean;
-}
+export interface GenericQuestionData {
+  acRate             : number;
+  difficulty         : Difficulty;
+  questionFrontendId : number;
+  paidOnly           : boolean;
+  status?            : string;
+  title              : string;
+  titleSlug          : string;
+  topicTags          : QuestionTag[];
+  hasSolution        : boolean;
+  hasVideoSolution   : boolean;
+};
 
-export interface ProblemsetQuestionListData {
-  problemsetQuestionList: {
-    total: number;
-    questions: QuestionGenericData[];
-  };
-}
+interface SimilarQuestion {
+  title      : string;
+  titleSlug  : string;
+  difficulty : string;
+};
 
-export interface DailyQuestionData {
-  date: string,
-  userStatus: string,
-  link: string,
-  question: QuestionGenericData;
-}
-
-export interface DailyQuestion {
-  activeDailyCodingChallengeQuestion: DailyQuestionData;
-}
-
-export interface ProblemsData {
-  totalQuestions: number;
-  count: number;
-  problemsetQuestionList: QuestionGenericData[];
-}
-
-export interface CodeSnippetData {
-  lang: string;
-  langSlug: string;
-  code: string;
+export interface CodeSnippet {
+  lang     : string;
+  langSlug : string;
+  code     : string;
 }
 
 interface Solution {
-  id: string,
-  canSeeDetails: boolean,
-  hasVideoSolution: boolean,
-  paidOnlyVideo: boolean
+  id               : number;
+  canSeeDetail     : boolean;
+  paidOnly         : boolean;
+  hasVideoSolution : boolean;
+  paidOnlyVideo    : boolean;
 }
 
-interface Question {
-  content: string;
-  companyTagStats: string[];
-  difficulty: Difficulty;
-  exampleTestcaseList: string[];
-  hints: {}[];
-  isPaidOnly: boolean;
-  questionId: number;
-  questionFrontendId: number;
-  solution: Solution;
-  status: string|null,
-  title: string;
-  titleSlug: string;
-  topicTags: QuestionTag[];
-  codeSnippets: CodeSnippetData[];
-}
+export interface DetailedQuestionData extends GenericQuestionData {
+  link                : string;
+  questionId          : number;
+  content             : string;
+  similarQuestions    : SimilarQuestion[];
+  exampleTestcaseList : string[];
+  codeSnippets        : CodeSnippet[];
+  hints               : string[];
+  solution            : Solution;
+};
 
-export interface SelectProblemData {
-  question: Question;
-}
+interface SelectProblemData {
+  questionId          : number;
+  questionFrontendId  : number;
+  title               : string;
+  titleSlug           : string;
+  content             : string;
+  isPaidOnly          : boolean;
+  difficulty          : Difficulty;
+  similarQuestions    : SimilarQuestion[];
+  exampleTestcaseList : string[];
+  topicTags           : QuestionTag[];
+  codeSnippets        : CodeSnippet[];
+  hints               : string[];
+  solution            : Solution;
+  status              : string;
+};
 
-export interface SingleQuestionData extends SelectProblemData {
-  link: string;
-}
+// ----------------------------------------------------------------------
+// -------------------------- GRAPHQL OUTPUT ----------------------------
+// ----------------------------------------------------------------------
+
+export interface ProblemsetQuestionList_Output {
+  problemsetQuestionList : {
+    total     : number;
+    questions : GenericQuestionData[];
+  }
+};
+
+export interface QuestionOfToday_Output {
+  activeDailyCodingChallengeQuestion: {
+    date       : string;
+    userStatus : string;
+    link       : string;
+    question   : GenericQuestionData;
+  }
+};
+
+export interface SelectProblem_Output {
+  question: SelectProblemData;
+};
+
+// ----------------------------------------------------------------------
+// -------------------------- COMPLEX TYPES -----------------------------
+// ----------------------------------------------------------------------
+
+export interface FetchedProblems {
+  count     : number;
+  questions : DetailedQuestionData[];
+};
 
 interface UserProfile {
   ranking?: number,
@@ -214,19 +232,18 @@ export interface ProblemsCount {
 };
 
 export interface AppStateData {
-  lastCommand?: string; // The last executed command
-  problemsCount?: ProblemsCount, // The total number of problems for each difficulty
-  lastSelectedProblems?: ProblemsData; // Last selected problems
-  lastQuestion?: SingleQuestionData; // Last selected question
-  dailyQuestion?: SingleQuestionData; // The daily question
-  watchQuestionId?: number, // The cached problem Id
-  watchQuestion?: SingleQuestionData, // The cached problem details
-  selectedUser?: string; // The selected user
-  userLogin?: UserLoginData; // User login data
-  cookies?: LeetcodeSessionCookies; // Leetcode cookies from login
-  profile?: User; // The complete logged in user profile
-  commands: AppCommandData[]; // All commands
-  variables: Variables; // All the App variables
+  lastCommand?     : string;
+  problemsCount?   : ProblemsCount;
+  fetchedProblems? : FetchedProblems;
+  dailyQuestion?   : DetailedQuestionData;
+  watchQuestionId? : number;
+  watchQuestion?   : DetailedQuestionData;
+  selectedUser?    : string;
+  userLogin?       : UserLoginData; // User login data
+  cookies?         : LeetcodeSessionCookies; // Leetcode cookies from login
+  profile?         : User; // The complete logged in user profile
+  commands         : AppCommandData[]; // All commands
+  variables        : Variables; // All the App variables
 }
 
 export type CommandCallable = (data: string[], state: AppStateData) => Promise<AppStateData>;
