@@ -1,5 +1,5 @@
-import * as utils from '../utils'
 import chalk from 'chalk';
+import * as formatter from '../utils/formatter'
 
 const ascii: {[k: string]: string} = 
 {
@@ -58,7 +58,7 @@ class RectangleBox {
       for (let idx = 0; idx < nrows; idx++) {
         const start = idx * curr_size;
         const stop = (idx + 1) * curr_size;
-        const just_row = utils.JustifyString(
+        const just_row = formatter.JustifyString(
           content.slice(start, stop), curr_size, this.just);
 
         n_content.push(this.style(lpadding + just_row + rpadding));

@@ -1,5 +1,6 @@
 import chalk from "chalk";
-import * as utils from '../utils'
+import * as generic from '../utils/general'
+import * as formatter from '../utils/formatter'
 
 
 const ascii: {[k: string]: string} = 
@@ -108,7 +109,7 @@ class TablePrinter {
     const properties = this.cprops[idx];
     const style = (header) ? (x: string) => chalk.bold(x.toUpperCase()) : properties.style!;
     const content_just = (header) ? 0 : properties.just!;
-    return style(utils.JustifyString(content, properties.size, content_just));
+    return style(formatter.JustifyString(content, properties.size, content_just));
   }
 
   private line(x: string): string {
@@ -173,13 +174,13 @@ class TablePrinter {
       })
     });
 
-    this.rows = [...this.rows, ...utils.Transpose(rows)];
+    this.rows = [...this.rows, ...generic.Transpose(rows)];
     this.nrows += vsize;
   }
 
   getWidth() : number {
     const sizes = this.cprops.map((x) => x.size);
-    return utils.ArraySum(...sizes) + 2 * this.padding[0] 
+    return generic.ArraySum(...sizes) + 2 * this.padding[0] 
       + this.padding[1] * (this.ncols - 1);
   }
 
@@ -208,7 +209,7 @@ class TablePrinter {
   }
 
   private getColumnSize(col_idx: number): number {
-    const column = utils.Transpose(this.rows)[col_idx];
+    const column = generic.Transpose(this.rows)[col_idx];
     return Math.max(...column.map((x) => this.getContentSize(x)));
   }
 
@@ -267,7 +268,7 @@ class TablePrinter {
     let title_str = "";
     if (this.title.length > 0) {
       const table_size = this.getWidth();
-      const title = utils.JustifyString(this.title, table_size, 0);
+      const title = formatter.JustifyString(this.title, table_size, 0);
       title_str = `${chalk.bold(title)}\n`;
     }
 

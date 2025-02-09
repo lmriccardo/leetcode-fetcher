@@ -97,7 +97,6 @@ query selectProblem($titleSlug: String!) {
       langSlug
       code
     }
-    stats
     hints
     solution {
       id

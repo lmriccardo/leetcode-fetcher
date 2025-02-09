@@ -14,13 +14,14 @@ import chalk from 'chalk';
 import * as types from '../types';
 import * as lc from '../leetcode';
 import * as generic from '../utils/general';
+import * as formatter from '../utils/formatter';
 
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
   const spinner = new Spinner("Fetching Problem List with provided filters");
-  spinner.start();
-
+    spinner.start();
+  
   const category = state.variables["CATEGORY"].value as string; // The category filter
   const limit = state.variables["LIMIT"].value as number; // The limit filter
   const skip = state.variables["SKIP"].value as number; // The skip filter
@@ -30,45 +31,46 @@ const ListCommand = async (_: string[], state: types.AppStateData)
   if (difficulty === "ALL") diff_filter = undefined;
 
   // We need to set the cookies for obtain the current status
-  let header = utils.FormatCookies(state.cookies);
+  let header = formatter.FormatCookies(state.cookies);
+  
+    const problems_data = await lc.FetchProblemList(
+      {
+        categorySlug: category, 
+        limit: limit, 
+        skip: skip, 
+        filters: {difficulty: diff_filter}
+      },
+      header
+    );
+  
+    spinner.stop();
+  
+    if (!problems_data) return state;
+  
+    spinner.changeMessage("Fetching each problem details");
+    spinner.start();
+  
+    // Then for each problem fetched, gathers other details
+    const fetched_problems = await Promise.all(
+        problems_data.problemsetQuestionList.questions.map(
+        async (value: types.GenericQuestionData) => 
+        {
+          const title = value.titleSlug;
+          const question_data = await lc.FetchQuestion({titleSlug: title});
+          if (question_data) return generic.MergeStructures<types.DetailedQuestionData>(
+            value, question_data.question)
+          return null;
+        }
+      )
+    );
 
-  const problems_data = await lc.FetchProblemList(
-    {
-      categorySlug: category, 
-      limit: limit, 
-      skip: skip, 
-      filters: {difficulty: diff_filter}
-    },
-    header
-  );
+    spinner.stop();
 
-  spinner.stop();
+    const final_result = fetched_problems.filter((value) => value !== null);
+    if (final_result.length === 0) return state;
 
-  if (!problems_data) return state;
-
-  spinner.changeMessage("Fetching each problem details");
-  spinner.start();
-
-  // Then for each problem fetched, gathers other details
-  const fetched_problems: types.FetchedProblems[] = [];
-  problems_data.problemsetQuestionList.questions.forEach(
-    async (value: types.GenericQuestionData) => 
-    {
-      const title = value.titleSlug;
-      const question_data = await lc.FetchQuestion({titleSlug: title});
-      if (question_data) {
-        fetched_problems.push(generic.MergeStructures(value, question_data));
-      }
-    }
-  )
-
-  // Shows the problems and some informations
-  utils.PrintUsedFilters(state.variables);
-  await utils.PrintProblemsSummary(problems_data, state.variables);
-
-  // Save the list of problems into the state
-  state.fetchedProblems = problems_data;
-  return state;
+    state.fetchedProblems = { count: final_result.length, questions: final_result };
+    return state;
 }
 
 // List command - Lists a number of problems
