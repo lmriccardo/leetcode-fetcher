@@ -77,12 +77,12 @@ export const FetchProblemList = (variables: types.QueryVariables, header?: Heade
 /**
  * Fetches the details for a single question using the LeetCode GraphQL Endpoint.
  */
-export const FetchQuestion = async (variables: types.QueryVariables) 
+export const FetchQuestion = async (variables: types.QueryVariables, header?: HeadersInit) 
   : Promise<types.SelectProblem_Output | null> =>
 {
   return createGraphQLFetcher(
     (x: types.SelectProblem_Output) => x, queries.problemset.selectProblem,
-    constants.SITES.GRAPHQL.URL
+    constants.SITES.GRAPHQL.URL, header
   )(variables);
 }
 
@@ -260,7 +260,7 @@ const FormatSubmissionRequest = (problem: types.DetailedQuestionData,
   cookies: types.LeetcodeSessionCookies, folder: string, test: boolean) : [HeadersInit?, BodyInit?, string?] =>
 {
   const problem_id = problem.questionId;
-  const problem_frontend_id = problem.questionFrontendId;
+  const problem_frontend_id = Number.parseInt(problem.questionFrontendId);
   const problem_title = problem.titleSlug;
   const f_cookies = formatter.FormatCookies(cookies);
   
@@ -353,7 +353,7 @@ export const TestSolution = async (state: types.AppStateData) : Promise<types.Te
   const result = await RunSolution<types.TestStatus>(state, "Submitting Test", true);
   if (result) {
     const folder = state.variables["FOLDER"].value as string;
-    const problem_id = state.watchQuestion?.questionFrontendId!;
+    const problem_id = Number.parseInt(state.watchQuestion?.questionFrontendId!);
     const problem_title = state.watchQuestion?.titleSlug!;
     result.test_cases = generic.ReadProblemTestCases(folder, problem_id, problem_title)!;
   }

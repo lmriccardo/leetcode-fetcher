@@ -55,7 +55,7 @@ export const PrintProblemsSummary = async (problems: types.FetchedProblems, vars
       let status = '';
 
       // Check if the current question is already downloaded
-      if (downloaded_problems.includes(value.questionFrontendId)) {
+      if (downloaded_problems.includes(Number.parseInt(value.questionFrontendId))) {
         status += constants.APP.EMOJIS.DOWNLOADED;
       }
 
@@ -73,8 +73,13 @@ export const PrintProblemsSummary = async (problems: types.FetchedProblems, vars
         status += constants.APP.EMOJIS.FREE;
       }
 
+      // Check if the solution is visible
+      if (value.hasSolution && !value.solution.canSeeDetail) {
+        status += constants.APP.EMOJIS.MONEY;
+      }
+
       // Check if the video solution is available
-      if (value.hasVideoSolution) {
+      if (value.hasVideoSolution && !value.solution.paidOnlyVideo) {
         status += constants.APP.EMOJIS.HAS_VIDEO;
       }
 

@@ -9,8 +9,10 @@
 import { randomBytes } from 'crypto';
 import { HTTPRequest, HTTPResponse } from 'puppeteer';
 import { Spinner } from '../pprint';
+import { HashPassword, OpenLoginBrowser } from '../utils/general';
+import { FormatString } from '../utils/formatter';
+import { PrintUserSummary } from '../utils/printer';
 import * as types from '../types';
-import * as utils from '../utils';
 import * as lc from '../leetcode';
 import constants from '../constants';
 import chalk from 'chalk';
@@ -32,7 +34,7 @@ const HandleResponse = async (state: types.AppStateData, response: HTTPResponse)
     const username = result.form.fields.login.value;
     const password = result.form.fields.password.value;
     const salt = randomBytes(16).toString('hex');
-    const hash_pawd = utils.HashPassword(password, salt);
+    const hash_pawd = HashPassword(password, salt);
 
     state.userLogin = {username: username, password: hash_pawd, salt: salt};
     state.selectedUser = username;
@@ -67,7 +69,7 @@ const CheckUserSession = async (spinner: Spinner, state: types.AppStateData)
     spinner.stop();
     
     if (result) {
-      console.log(utils.FormatString("\rThe current {0} is still {1}!",
+      console.log(FormatString("\rThe current {0} is still {1}!",
         chalk.bold("session"), chalk.greenBright("active")
       ));
     } else {
@@ -77,18 +79,22 @@ const CheckUserSession = async (spinner: Spinner, state: types.AppStateData)
   }
 }
 
-const LoginCommand = async (_: string[], state: types.AppStateData)
+const LoginCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> => 
 {
   const spinner = new Spinner("User Logging in");
-  await CheckUserSession(spinner, state);
+  const forced = data[0] !== undefined;
+  if (!forced) await CheckUserSession(spinner, state);
+  else {
+    console.warn(chalk.yellowBright("[WARNING] Login has been forced. No check on current session."));
+  }
 
-  if (!state.userLogin) {
+  if (!state.userLogin || forced) {
     spinner.changeMessage("User Logging in");
     spinner.start();
 
     try {
-      await utils.OpenLoginBrowser(
+      await OpenLoginBrowser(
         (r: HTTPResponse) => HandleResponse(state, r),
         HandleRequest
       );
@@ -112,7 +118,7 @@ const LoginCommand = async (_: string[], state: types.AppStateData)
   const user_data = await lc.GetUserData(state.userLogin.username!, state);
   state.profile = user_data;
 
-  if (user_data) utils.PrintUserSummary(user_data);
+  if (user_data) PrintUserSummary(user_data);
 
   return state;
 }
@@ -122,10 +128,12 @@ export const login_command: types.AppCommandData = {
   group    : 'User',
   name     : 'Login Command',
   command  : 'login',
-  syntax   : /^login$/,
+  syntax   : /^login(?:\s+(force))?$/,
   callback : LoginCommand,
 
-  help: 'login - Login into leetcode to start a session\n'
+  help: 'login [force] - Login into leetcode to start a session. `force` parameter\n' +
+        'forces the application to attempt the login instead of checking the\n'       +
+        'current session validity (if any).'
 };
 
 const InspectCommand = async (data: string[], state: types.AppStateData)
@@ -142,7 +150,7 @@ const InspectCommand = async (data: string[], state: types.AppStateData)
   }
 
   const result = await lc.GetUserData(data[0], state);
-  if (result) utils.PrintUserSummary(result);
+  if (result) PrintUserSummary(result);
 
   return state;
 }

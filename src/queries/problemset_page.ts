@@ -105,7 +105,6 @@ query selectProblem($titleSlug: String!) {
       hasVideoSolution
       paidOnlyVideo
     }
-    status
   }
 }`;
 

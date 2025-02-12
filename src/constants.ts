@@ -185,7 +185,8 @@ const constants = {
       DOWNLOADED: '🔗',
       NOT_FREE: '🙈',
       FREE: '🙉',
-      HAS_VIDEO: '📹'
+      HAS_VIDEO: '🎥',
+      MONEY: '💲'
     }
   }
 }
