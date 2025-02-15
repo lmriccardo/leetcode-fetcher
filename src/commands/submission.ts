@@ -7,12 +7,13 @@
  *  - submit [Submit the code of specified or cached question]
  */
 
+import { daily_command, create_command } from './problems';
+import { GetExistingProblems } from '../utils/general';
+import { PrintTestDetails, PrintSubmissionResults } from '../utils/printer';
 import prompt from 'prompt';
 import chalk from 'chalk';
 import constants from '../constants';
-import { daily_command, create_command } from './problems';
 import * as types from '../types'
-import * as utils from '../utils'
 import * as lc from '../leetcode'
 
 const AskForCreation = async (state: types.AppStateData) : Promise<types.AppStateData | null> => 
@@ -40,7 +41,7 @@ const WatchCommand = async (data: string[], state: types.AppStateData)
   }
 
   const is_daily = data[0] === 'daily';
-  const instances = await utils.GetExistingProblems(state.variables["FOLDER"].value as string);
+  const instances = await GetExistingProblems(state.variables["FOLDER"].value as string);
 
   // If the input is given, we need to check that the provided IDX
   // belongs to the set of already created instances.
@@ -51,7 +52,7 @@ const WatchCommand = async (data: string[], state: types.AppStateData)
       return state;
     }
 
-    problem_id = state.dailyQuestion.question.questionFrontendId;
+    problem_id = Number.parseInt(state.dailyQuestion.questionFrontendId);
 
     // Check that there exists an instance of the given problem ID
     if (!instances.includes(Number.parseInt(problem_id.toString()))) {
@@ -65,7 +66,7 @@ const WatchCommand = async (data: string[], state: types.AppStateData)
     state.watchQuestion = state.dailyQuestion;
   } else {
     // First wee need to check that there are locally fetched problems
-    if (!state.lastSelectedProblems) {
+    if (!state.fetchedProblems) {
       console.error(chalk.redBright("[ERROR] No locally fetched problems available."));
       return state;
     }
@@ -73,13 +74,13 @@ const WatchCommand = async (data: string[], state: types.AppStateData)
     // Otherwise take the corresponding problem and see
     // if a corresponding instance exists
     const problem_idx = Number.parseInt(data[0]);
-    if (problem_idx >= state.lastSelectedProblems.problemsetQuestionList.length) {
+    if (problem_idx >= state.fetchedProblems.count) {
       console.error(chalk.redBright("[ERROR] Input index exceeds fetched problems"));
       return state;
     }
 
-    const problem = state.lastSelectedProblems.problemsetQuestionList[problem_idx];
-    problem_id = problem.questionFrontendId;
+    const problem = state.fetchedProblems.questions[problem_idx];
+    problem_id = Number.parseInt(problem.questionFrontendId);
 
     if (!instances.includes(Number.parseInt(problem_id.toString()))) {
       console.warn(chalk.yellowBright("[WARNING] No local instance found."));
@@ -89,7 +90,7 @@ const WatchCommand = async (data: string[], state: types.AppStateData)
     }
     
     state.watchQuestionId = problem_id;
-    state.watchQuestion = (await lc.FetchQuestion({titleSlug: problem.titleSlug}))!;
+    state.watchQuestion = problem;
   }
 
   console.log(chalk.greenBright(`[INFO] Watching Problem ID ${problem_id}`));
@@ -132,7 +133,7 @@ const TestCommand = async (_: string[], state: types.AppStateData)
     return state;
   }
 
-  utils.PrintTestDetails(state.watchQuestion!, result);
+  PrintTestDetails(state.watchQuestion!, result);
 
   return state;
 }
@@ -171,7 +172,7 @@ const SubmitCommand = async (_: string[], state: types.AppStateData)
     return state;
   }
 
-  utils.PrintSubmissionResults(state.watchQuestion!, result);
+  PrintSubmissionResults(state.watchQuestion!, result);
   state.profile = await lc.GetUserData(state.selectedUser!, state);
 
   return state;

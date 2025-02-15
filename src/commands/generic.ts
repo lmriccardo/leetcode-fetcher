@@ -8,7 +8,7 @@
  */
 
 import * as types from '../types'
-import * as utils from '../utils'
+import * as formatter from '../utils/formatter'
 
 const HelpCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
@@ -20,7 +20,7 @@ const HelpCommand = async (data: string[], state: types.AppStateData)
   if (data.length > 0) {
     const command = filter_result[0];
     const separator_str = '-'.repeat(command.name.length);
-    console.log(utils.FormatString("{0}\n{1}\n{2}", command.name, 
+    console.log(formatter.FormatString("{0}\n{1}\n{2}", command.name, 
       separator_str, command.help));
   } else {
     const commands: Record<string, types.AppCommandData[]> = {};
@@ -34,7 +34,7 @@ const HelpCommand = async (data: string[], state: types.AppStateData)
       console.log(`####################### ${group} Commands List #######################\n`);
       commands[group].forEach((cmd: types.AppCommandData) => {
         const separator_str = '-'.repeat(cmd.name.length);
-        console.log(utils.FormatString("{0}\n{1}\n{2}", cmd.name, 
+        console.log(formatter.FormatString("{0}\n{1}\n{2}", cmd.name, 
           separator_str, cmd.help));
       });
       console.log();

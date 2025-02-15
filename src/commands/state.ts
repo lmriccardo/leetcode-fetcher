@@ -9,19 +9,21 @@
  *  - show  [Shows the current state (non-sensitive information)]
  */
 
+import { FormatString } from '../utils/formatter';
+import { RequestPassword } from '../utils/general';
+import { PrintProblemsSummary } from '../utils/printer';
 import * as types from '../types';
-import * as utils from '../utils';
 import * as fs from 'fs';
 import * as path from 'path'
 import constants from '../constants';
 import chalk from 'chalk';
 
 const ConstructRegex = (name: string, vars: types.Variable[], unset?: boolean): RegExp => {
-  const prefix = utils.FormatString("^{0}", name);
+  const prefix = FormatString("^{0}", name);
 
   const regex_str = vars.map((value: types.Variable): string => {
     const name_val = "(" + value.name + ")";
-    return utils.FormatString("(?:\\s+{0})?", (unset || false) ? name_val : value.match);
+    return FormatString("(?:\\s+{0})?", (unset || false) ? name_val : value.match);
   }).reduce((prev: string, curr: string) => (prev + curr));
 
   return new RegExp(prefix + regex_str);
@@ -103,7 +105,7 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
   let profile = null;
   
   if (state.variables['SAVE_LOGIN'].value === 1 && state.userLogin !== undefined) {
-    const result = await utils.RequestPassword(state.userLogin);
+    const result = await RequestPassword(state.userLogin);
     if (result) {
       cookies = state.cookies;
       userLogin = state.userLogin;
@@ -118,8 +120,7 @@ const SaveCommand = async (data: string[], state: types.AppStateData)
   // Select the data to save into the json file
   const content_data = {
     lastCommand: state.lastCommand || null,
-    lastSelectedProblems: state.lastSelectedProblems || null,
-    lastQuestion: state.lastQuestion || null,
+    fetchedProblems: state.fetchedProblems || null,
     selectedUser: state.selectedUser || null,
     userLogin: userLogin || null,
     profile: profile || null,
@@ -186,8 +187,7 @@ const LoadCommand = async (data: string[], state: types.AppStateData)
 
   // Modify the state with the loaded informations
   state.lastCommand = IfNullUndefined(content_data.lastCommand);
-  state.lastQuestion = IfNullUndefined(content_data.lastQuestion);
-  state.lastSelectedProblems = IfNullUndefined(content_data.lastSelectedProblems);
+  state.fetchedProblems = IfNullUndefined(content_data.fetchedProblems);
   state.selectedUser = IfNullUndefined(content_data.selectedUser);
   state.userLogin = IfNullUndefined(content_data.userLogin);
   state.profile = IfNullUndefined(content_data.profile);
@@ -222,7 +222,7 @@ const ShowCommand = async (data: string[], state: types.AppStateData)
 
   let validation_result = true;
   if (sensitive && state.userLogin !== undefined) {
-    validation_result = await utils.RequestPassword(state.userLogin!);
+    validation_result = await RequestPassword(state.userLogin!);
   }
 
   if (!validation_result) {
@@ -236,18 +236,11 @@ const ShowCommand = async (data: string[], state: types.AppStateData)
   console.log("Logged-in User:", state.selectedUser);
   console.log("Watching Question ID:", state.watchQuestionId);
   
-  if (state.lastSelectedProblems !== undefined) {
+  if (state.fetchedProblems) {
     console.log("");
-    await utils.PrintProblemsSummary(state.lastSelectedProblems, state.variables);
+    await PrintProblemsSummary(state.fetchedProblems, state.variables);
   } else {
-    console.log("Total Problems:", state.lastSelectedProblems);
-  }
-
-  if (state.lastQuestion !== undefined) {
-    console.log("");
-    utils.PrintQuestionSummary(state.lastQuestion);
-  } else {
-    console.log("Last Question:", state.lastQuestion);
+    console.log("Total Problems:", state.fetchedProblems);
   }
 
   if (sensitive && validation_result) {
@@ -265,7 +258,7 @@ const ShowCommand = async (data: string[], state: types.AppStateData)
   
   console.log("\nVARIABLES\n---------");
   Object.values(state.variables).forEach((value: types.Variable, idx: number) => {
-    console.log(utils.FormatString("{0} => {1} <{2} ({3})>",  value.name, 
+    console.log(FormatString("{0} => {1} <{2} ({3})>",  value.name, 
       value.value.toString(), value.desc, value.values));
   });
 

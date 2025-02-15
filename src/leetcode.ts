@@ -1,10 +1,12 @@
-import * as types from './types'
 import { HeadersInit, BodyInit } from 'undici-types'
-import * as utils from './utils'
+import { Spinner } from './pprint'
 import queries from './queries'
 import constants from './constants'
 import chalk from 'chalk'
-import { Spinner } from './pprint'
+import * as types from './types'
+import * as formatter from './utils/formatter'
+import * as generic from './utils/general'
+
 
 export const FetchGraphQLData = async <T, U>(
   variables: types.QueryVariables, formatData: (data: T) => U, query: string, 
@@ -41,10 +43,13 @@ const createGraphQLFetcher = <T, U>(
   };
 };
 
+/**
+ * Fetches the total number of problems for the input difficulty
+ */
 export const FetchNumberOfProblems = async (difficulty: string) : Promise<number | null> =>
 {
   return createGraphQLFetcher(
-    (data: types.ProblemsetQuestionListData) => data.problemsetQuestionList.total,
+    (data: types.ProblemsetQuestionList_Output) => data.problemsetQuestionList.total,
     queries.problemset.problemsetQuestionList, constants.SITES.GRAPHQL.URL
   )(
     {
@@ -56,31 +61,44 @@ export const FetchNumberOfProblems = async (difficulty: string) : Promise<number
   )
 }
 
+/**
+ * Fetches a list of problems from LeetCode interacting with the GraphQL endpoint.
+ * The problems are also filtered using the `variables` input.
+ */
 export const FetchProblemList = (variables: types.QueryVariables, header?: HeadersInit) 
-  : Promise<types.ProblemsData | null> =>
+  : Promise<types.ProblemsetQuestionList_Output | null> =>
 {
   return createGraphQLFetcher(
-    utils.FormatProblemsData, queries.problemset.problemsetQuestionList,
+    (x: types.ProblemsetQuestionList_Output) => x, queries.problemset.problemsetQuestionList,
     constants.SITES.GRAPHQL.URL, header
   )(variables);
 }
 
-export const FetchQuestion = async (variables: types.QueryVariables) 
-  : Promise<types.SingleQuestionData | null> =>
+/**
+ * Fetches the details for a single question using the LeetCode GraphQL Endpoint.
+ */
+export const FetchQuestion = async (variables: types.QueryVariables, header?: HeadersInit) 
+  : Promise<types.SelectProblem_Output | null> =>
 {
   return createGraphQLFetcher(
-    utils.FormatQuestionData, queries.problemset.selectProblem,
-    constants.SITES.GRAPHQL.URL
+    (x: types.SelectProblem_Output) => x, queries.problemset.selectProblem,
+    constants.SITES.GRAPHQL.URL, header
   )(variables);
 }
 
-export const FetchDailyQuestion = async () : Promise<types.DailyQuestion | null> => 
+/**
+ * Fetches the current daily question from LeetCode through the graphql endpoint.
+ */
+export const FetchDailyQuestion = async () : Promise<types.QuestionOfToday_Output | null> => 
 {
-  return createGraphQLFetcher((x: types.DailyQuestion) => x, 
+  return createGraphQLFetcher((x: types.QuestionOfToday_Output) => x, 
     queries.problemset.questionOfToday, constants.SITES.GRAPHQL.URL
   )({});
 }
 
+/**
+ * Fetches the input user profile from LeetCode through the graphql endpoint. 
+ */
 export const FetchUserProfile = async (vars: types.QueryVariables, headers?: HeadersInit) 
   : Promise<types.MatchedUser | null> =>
 {
@@ -90,6 +108,11 @@ export const FetchUserProfile = async (vars: types.QueryVariables, headers?: Hea
   )(vars)
 }
 
+/**
+ * Fetches the input user language stats from LeetCode through the graphql endpoint.
+ * For each programming languge the corresponding count of accepted or attempted
+ * submissions is returned.
+ */
 export const FetchUserLanguageStats = async (vars: types.QueryVariables, headers?: HeadersInit)
   : Promise<types.UserLanguageStats | null> =>
 {
@@ -99,6 +122,9 @@ export const FetchUserLanguageStats = async (vars: types.QueryVariables, headers
   )(vars);
 }
 
+/**
+ * Fetches the input user list of all recent submissions from LeetCode through the graphql endpoint.
+ */
 export const FetchUserRecentSubmissions = async (vars: types.QueryVariables, headers?: HeadersInit)
   : Promise<types.RecentSubmissionList | null> =>
 {
@@ -108,6 +134,9 @@ export const FetchUserRecentSubmissions = async (vars: types.QueryVariables, hea
   )(vars);
 }
 
+/**
+ * Fetches the input user list of all recent accepted submissions from LeetCode through the graphql endpoint.
+ */
 export const FetchUserRecentAcSubmissions = async (vars: types.QueryVariables, headers?: HeadersInit)
   : Promise<types.RecentAcSubmissionList | null> =>
 {
@@ -117,6 +146,9 @@ export const FetchUserRecentAcSubmissions = async (vars: types.QueryVariables, h
   )(vars);
 }
 
+/**
+ * Fetches the details for the input submission ID
+ */
 export const FetchSubmissionDetail = async (vars: types.QueryVariables, headers?: HeadersInit)
   : Promise<types.SubmissionDetails | null> =>
 {
@@ -130,7 +162,7 @@ export const FetchShortSubmissionDetail = async (vars: types.QueryVariables, hea
   : Promise<types.ShortSubmissionDetailsData | null> =>
 {
   return createGraphQLFetcher(
-    utils.FormatShortSubmissionDetails, queries.solveql.submissionDetails,
+    formatter.FormatShortSubmissionDetails, queries.solveql.submissionDetails,
     constants.SITES.GRAPHQL.URL, headers
   )(vars);
 }
@@ -138,7 +170,7 @@ export const FetchShortSubmissionDetail = async (vars: types.QueryVariables, hea
 const ToShortSubmission = async (submissions: types.SubmissionData[], state: types.AppStateData) 
   : Promise<types.SubmissionList> =>
 {
-  let headers = utils.FormatCookies(state.cookies);
+  let headers = formatter.FormatCookies(state.cookies);
   
   if (!headers) {
     console.warn(chalk.yellowBright("To fetch submission details a session must exists."));
@@ -167,7 +199,7 @@ export const GetUserData = async (username: string, state: types.AppStateData) :
   // Check that the provided user exists
   if (user_profile?.matchedUser === null) {
     spinner.stop();
-    console.error(chalk.redBright(utils.FormatString(
+    console.error(chalk.redBright(formatter.FormatString(
       "User {0} does not exists", chalk.bold(username))));
 
     return undefined;
@@ -185,7 +217,7 @@ export const GetUserData = async (username: string, state: types.AppStateData) :
   spinner.stop();
 
   // Construct the user type with the fetched informations
-  return utils.FormatUserData(user_profile!, lang_stats!, short_submission, short_ac_submission);
+  return formatter.FormatUserData(user_profile!, lang_stats!, short_submission, short_ac_submission);
 }
 
 export const FetchLeetcode = async (url: string, method: string, headers: HeadersInit, body?: BodyInit)
@@ -224,13 +256,13 @@ export const CheckUserSession = async (cookies: types.LeetcodeSessionCookies)
   return false;
 }
 
-const FormatSubmissionRequest = (problem: types.SingleQuestionData, 
+const FormatSubmissionRequest = (problem: types.DetailedQuestionData, 
   cookies: types.LeetcodeSessionCookies, folder: string, test: boolean) : [HeadersInit?, BodyInit?, string?] =>
 {
-  const problem_id = problem.question.questionId;
-  const problem_frontend_id = problem.question.questionFrontendId;
-  const problem_title = problem.question.titleSlug;
-  const f_cookies = utils.FormatCookies(cookies);
+  const problem_id = problem.questionId;
+  const problem_frontend_id = Number.parseInt(problem.questionFrontendId);
+  const problem_title = problem.titleSlug;
+  const f_cookies = formatter.FormatCookies(cookies);
   
   const request_headers = {
     ...constants.SITES.GENERIC_HEADERS,
@@ -241,14 +273,14 @@ const FormatSubmissionRequest = (problem: types.SingleQuestionData,
     "x-csrftoken": cookies.csrftoken!
   };
 
-  const solution = utils.ReadProblemSolution(folder, problem_frontend_id, problem_title);
+  const solution = generic.ReadProblemSolution(folder, problem_frontend_id, problem_title);
   if (!solution) return [undefined, undefined, undefined];
   
   const request_body: {[key: string]: any} = 
     { lang: "python3", question_id: problem_id.toString(), typed_code: solution };
 
   if (test) {
-    const test_cases = utils.ReadProblemTestCases(folder, problem_frontend_id, problem_title);
+    const test_cases = generic.ReadProblemTestCases(folder, problem_frontend_id, problem_title);
     if (!test_cases) return [undefined, undefined, undefined];
     request_body.data_input = test_cases.join('\n');
   }
@@ -321,9 +353,9 @@ export const TestSolution = async (state: types.AppStateData) : Promise<types.Te
   const result = await RunSolution<types.TestStatus>(state, "Submitting Test", true);
   if (result) {
     const folder = state.variables["FOLDER"].value as string;
-    const problem_id = state.watchQuestion?.question.questionFrontendId!;
-    const problem_title = state.watchQuestion?.question.titleSlug!;
-    result.test_cases = utils.ReadProblemTestCases(folder, problem_id, problem_title)!;
+    const problem_id = Number.parseInt(state.watchQuestion?.questionFrontendId!);
+    const problem_title = state.watchQuestion?.titleSlug!;
+    result.test_cases = generic.ReadProblemTestCases(folder, problem_id, problem_title)!;
   }
   return result;
 }
@@ -337,7 +369,7 @@ export const SubmitSolution = async (state: types.AppStateData)
   const spinner = new Spinner(`Fetching submission Id ${submission_result.submission_id} details`);
   spinner.start();
   
-  const f_cookies = utils.FormatCookies(state.cookies!);
+  const f_cookies = formatter.FormatCookies(state.cookies!);
   const submission_details = await FetchSubmissionDetail(
     {submissionId: submission_result?.submission_id}, {...f_cookies}
   );

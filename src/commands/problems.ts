@@ -9,18 +9,20 @@
  *  - daily  [Fetch the current daily question]
  */
 
-import * as types from '../types';
-import * as utils from '../utils';
-import * as lc from '../leetcode';
 import { Spinner } from '../pprint';
+import { PrintProblemsSummary, PrintQuestionSummary, PrintUsedFilters } from '../utils/printer';
 import chalk from 'chalk';
+import * as types from '../types';
+import * as lc from '../leetcode';
+import * as generic from '../utils/general';
+import * as formatter from '../utils/formatter';
 
 const ListCommand = async (_: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
   const spinner = new Spinner("Fetching Problem List with provided filters");
-  spinner.start();
-
+    spinner.start();
+  
   const category = state.variables["CATEGORY"].value as string; // The category filter
   const limit = state.variables["LIMIT"].value as number; // The limit filter
   const skip = state.variables["SKIP"].value as number; // The skip filter
@@ -30,8 +32,8 @@ const ListCommand = async (_: string[], state: types.AppStateData)
   if (difficulty === "ALL") diff_filter = undefined;
 
   // We need to set the cookies for obtain the current status
-  let header = utils.FormatCookies(state.cookies);
-
+  let header = formatter.FormatCookies(state.cookies);
+  
   const problems_data = await lc.FetchProblemList(
     {
       categorySlug: category, 
@@ -46,12 +48,40 @@ const ListCommand = async (_: string[], state: types.AppStateData)
 
   if (!problems_data) return state;
 
-  // Shows the problems and some informations
-  utils.PrintUsedFilters(state.variables);
-  await utils.PrintProblemsSummary(problems_data, state.variables);
+  spinner.changeMessage("Fetching each problem details");
+  spinner.start();
 
-  // Save the list of problems into the state
-  state.lastSelectedProblems = problems_data;
+  // Then for each problem fetched, gathers other details
+  const fetched_problems = await Promise.all(
+    problems_data.problemsetQuestionList.questions.map(
+      async (value: types.GenericQuestionData) => 
+      {
+        const title = value.titleSlug;
+        const question_data = await lc.FetchQuestion({titleSlug: title});
+
+        if (!question_data) {
+          console.warn(chalk.yellowBright("[WARNING] Unable to fetch more details " +
+            `for problem titled: ${title}`));
+          
+          return null;
+        }
+
+        return generic.MergeStructures<types.DetailedQuestionData>(
+          value, question_data.question);
+      }
+    )
+  );
+
+  spinner.stop();
+
+  
+  const final_result = fetched_problems.filter((value) => value !== null);
+  if (final_result.length === 0) return state;
+  
+  
+  state.fetchedProblems = { count: final_result.length, questions: final_result };
+  PrintUsedFilters(state.variables);
+  await PrintProblemsSummary(state.fetchedProblems, state.variables);
   return state;
 }
 
@@ -77,69 +107,93 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
     return state;
   }
 
-  const spinner = new Spinner("");
-  const is_by_id = data[2] !== undefined;
+  const spinner = new Spinner(""); // Create the spinner for dynamic logs
 
-  // Two possible ways to fetch the question. The first way is by ID.
-  let problems_data: types.ProblemsData | null = null;
-  let problem_id = Number.parseInt(data[2]) ?? null;
+  // There are two possible ways to fetch a problem, the first one is by title-slug
+  let question_id = Number.parseInt(data[2]) ?? null;
 
-  if (!is_by_id) {
-    const title = data[1];
-    spinner.changeMessage(`Searching Question ID for: ${title}`);
+  if (!(data[2] !== undefined)) // Check if it is by id or by name 
+  {
+    // Check if the question has been already fetched
+    const title_slug = data[1];
+
+    spinner.changeMessage(`Checking if ${title_slug} is already fetched`)
     spinner.start();
 
-    const problem_result = await lc.FetchQuestion({titleSlug: title});
-    spinner.stop();
+    if (state.fetchedProblems) {
+      const fetched = state.fetchedProblems.questions.filter(
+        (value): boolean => value.titleSlug === title_slug);
+      
+      if (fetched.length > 0) {
+        spinner.stop();
+        console.log(chalk.greenBright("[INFO] Question already fetched"));
+        return state;
+      }
+    }
 
-    if (!problem_result) {
+    // If it does not exists, then we need to fetch the question id
+    spinner.changeMessage(`Searching Question ID for ${title_slug}`)
+    const problem_result = await lc.FetchQuestion({titleSlug: title_slug});
+    if (!problem_result || !problem_result?.question) {
+      spinner.stop();
       console.error(chalk.redBright("[ERROR] No results found"));
       return state;
     }
 
-    problem_id = problem_result.question.questionFrontendId;
-    
-  }
+    question_id = Number.parseInt(problem_result.question.questionId);
+  } else {
+    spinner.changeMessage(`Checking if Question ID ${question_id} is already fetched`)
+    spinner.start();
 
-  spinner.changeMessage(`Fetching Problem ID: ${problem_id}`);
-  spinner.start();
-
-  // Check if the problem has already been fetched
-  if (state.lastSelectedProblems !== undefined) {
-    const search_result = state.lastSelectedProblems.problemsetQuestionList.filter(
-      (question) => (question.questionFrontendId === problem_id));
-
-    if (search_result.length > 0) {
-      spinner.stop();
-      console.log(chalk.greenBright("[INFO] Question seems already fetched."));
-      return state;
+    // The user has provided the question id, which is the question frontend id
+    // most of the time, since it is the one that leetcode shows. There is no simple
+    // way to discover the actual question id from the frontend one
+    if (state.fetchedProblems) {
+      const fetched = state.fetchedProblems.questions.filter(
+        (value): boolean => Number.parseInt(value.questionFrontendId) === question_id);
+      
+      if (fetched.length > 0) {
+        spinner.stop();
+        console.log(chalk.greenBright("[INFO] Question already fetched"));
+        return state;
+      }
     }
   }
+
+  spinner.changeMessage(`Fetching Problem ID: ${question_id}`);
   
   // We need to set the cookies for obtain the current status
-  let header = utils.FormatCookies(state.cookies);
-  problems_data = await lc.FetchProblemList(
-    { categorySlug: '',  limit: 1,  skip: problem_id-1, filters: {} },
+  let header = formatter.FormatCookies(state.cookies);
+  const problems_data = await lc.FetchProblemList(
+    { categorySlug: '',  limit: 1,  skip: question_id-1, filters: {} },
     header
   );
 
-  spinner.stop();
-  
+  spinner.stop(); // Stops the spinner, that was the last operation
+
   if (!problems_data) {
-    console.error(`No problem with ID ${problem_id}`);
+    console.error(chalk.redBright(`[ERROR] Something went wrong or no problem with ID ${question_id}`));
     return state;
   }
 
-  utils.PrintUsedFilters(state.variables);
-  await utils.PrintProblemsSummary(problems_data, state.variables);
+  // Merge the fetched problem with other details from another query
+  const question_title = problems_data.problemsetQuestionList.questions[0].titleSlug;
+  const question_data = await lc.FetchQuestion({titleSlug: question_title}, header);
+  if (!question_data) {
+    console.error(chalk.redBright(`[ERROR] Something went wrong.`));
+    return state;
+  }
 
-  // Add the problems to the state
-  if (state.lastSelectedProblems === undefined) {
-    state.lastSelectedProblems = problems_data;
+  const detailed_data = generic.MergeStructures<types.DetailedQuestionData>(
+    question_data.question, problems_data.problemsetQuestionList.questions[0]);
+
+  await PrintProblemsSummary({count: 1, questions: [detailed_data]}, state.variables);
+
+  if (!state.fetchedProblems) {
+    state.fetchedProblems = {count: 1, questions: [detailed_data]};
   } else {
-    const problem = problems_data.problemsetQuestionList[0];
-    state.lastSelectedProblems.problemsetQuestionList.push(problem);
-    state.lastSelectedProblems.count++;
+    state.fetchedProblems.count++;
+    state.fetchedProblems.questions.push(detailed_data);
   }
 
   return state;
@@ -150,34 +204,34 @@ export const fetch_command: types.AppCommandData = {
   group    : 'Problems',
   name     : 'Fetch Command',
   command  : 'fetch',
-  syntax   : /^fetch\s+(NAME\s+([\w\-]+)|ID\s+(\d+)){1,}$/,
+  syntax   : /^fetch\s+(title\s+([\w\-]+)|id\s+(\d+)){1,}$/,
   callback : FetchCommand,
 
-  help: 'fetch <NAME|ID> <value> - Fetch locally a single problem from remote. Notice\n'      +
-        'that: NAME is the title-slug which means the real title lower-case and spaces\n'     +
-        'replaced by `-`; ID is the frontend Id, i.e., the number identifying the problem.\n'
+  help: 'fetch <title|id> value - Fetch locally a single problem from remote. Notice\n'        +
+        'that: `title` is the title-slug which means the real title lower-case and spaces\n'   +
+        'replaced by `-`; `id` is the frontend id, i.e., the number identifying the problem.\n'
 };
 
 const DetailCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
-  const is_local = data[1] === 'BYIDX' || data[1] === undefined;
-  const problem_id = Number.parseInt(data[0]);
+  const problem_idx = Number.parseInt(data[0]); // Local index of the fetched problem
 
-  // If local then fetch from local storage and print
-  if (is_local) {
-    console.log(state.lastSelectedProblems?.problemsetQuestionList[problem_id]);
-    return state;
+  // First we need to check for out of bound indexing
+  if (!state.fetchedProblems) {
+    console.error(chalk.yellowBright(
+      "[WARNING] Still no fetched problems. Please" +
+      "fetch using either list or fetch commads."
+    ));
   }
 
-  // Otherwise, fetch using the API
-  // We need to set the cookies for obtain the current status
-  let header = utils.FormatCookies(state.cookies);
-  const problems_data = await lc.FetchProblemList(
-    {categorySlug: "", limit: 1, skip: problem_id-1, filters: {}}, header
-  );
+  if (problem_idx >= state.fetchedProblems!.count) {
+    console.error(chalk.redBright(
+      `[ERROR] Not enough fetched problems. Maximum ${state.fetchedProblems!.count}`));
+  }
 
-  if (problems_data) console.log(problems_data.problemsetQuestionList[0]);
+  const problem_data = state.fetchedProblems!.questions[problem_idx];
+  console.log(problem_data);
 
   return state;
 }
@@ -187,14 +241,13 @@ export const detail_command: types.AppCommandData = {
   group    : 'Problems',
   name     : 'Detail Command',
   command  : 'detail',
-  syntax   : /^detail\s+(\d+)(?:\s+(BYID|BYIDX))?$/,
+  syntax   : /^detail\s+(\d+)$/,
   callback : DetailCommand,
 
-  help: 'detail <ID/IDX> [BYID|BYIDX] - Print more details about a single problem.\n'    +
-        'The problem is specified either by "local" index, meaning among those that\n'   +
-        'were previously fetched using the `list` command, or by absolute problem Id.\n' +
-        'IDX = local indexing, ID = Absolute problem ID. By default, if the second\n'    +
-        'is not specified, it is intended as IDX not ID.\n'
+  help: 'detail idx - Print more details about a single problem.\n'     +
+        'The problem is specified using the `idx` parameter, which\n'   +
+        'identifies the local index of the question among those that\n' +
+        'have already been fetched either using `list` or `fetch`.'
 };
 
 const CreateCommand = async (data: string[], state: types.AppStateData) 
@@ -203,7 +256,7 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
   const spinner = new Spinner('');
 
   // Obtain the problem title from the current state if exists
-  if (state.lastSelectedProblems === undefined) {
+  if (!state.fetchedProblems) {
     console.error(chalk.redBright("[ERROR] ")                                                    +
       chalk.redBright("No locally fetched problems. Consider running `fetch` or `list` command") + 
       chalk.redBright("before `create`.")
@@ -213,7 +266,7 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
   }
 
   var problem_idxs: number[];
-  const fetch_length = state.lastSelectedProblems.problemsetQuestionList.length;
+  const fetch_length = state.fetchedProblems!.count;
 
   if (data[0] !== undefined) {
     const problem_idx = Number.parseInt(data[0]);
@@ -233,31 +286,21 @@ const CreateCommand = async (data: string[], state: types.AppStateData)
     problem_idxs = Array.from({ length: fetch_length }, (_, n) => n);
   }
 
-  var last_question: types.SingleQuestionData|null = null;
-
   // Get already existing problem instances
-  const existing_idxs = await utils.GetExistingProblems(state.variables["FOLDER"].value as string);
+  const existing_idxs = await generic.GetExistingProblems(state.variables["FOLDER"].value as string);
 
   for (let idx = 0; idx < problem_idxs.length; idx++) {
-    const curr_problem = state.lastSelectedProblems.problemsetQuestionList[problem_idxs[idx]];
-    const frontend_id = curr_problem.questionFrontendId;
+    const curr_problem = state.fetchedProblems.questions[problem_idxs[idx]];
+    const frontend_id = Number.parseInt(curr_problem.questionFrontendId);
     if (existing_idxs.includes(frontend_id)) continue;
 
     spinner.changeMessage(`Creating instance for ${curr_problem.title}`);
     spinner.start();
 
-    const question = await lc.FetchQuestion({titleSlug: curr_problem.titleSlug});
-
-    last_question = question;
-    
-    if (!question) continue; // If there is no question, continue
-
-    utils.CreateQuestionInstance(last_question, state.variables["FOLDER"].value as string);
+    generic.CreateQuestionInstance(curr_problem, state.variables["FOLDER"].value as string);
   }
 
   spinner.stop();
-  state.lastQuestion = (last_question) ? last_question : undefined;
-
   return state;
 }
 
@@ -280,7 +323,7 @@ export const create_command: types.AppCommandData = {
 const DailyCommand = async (data: string[], state: types.AppStateData)
   : Promise<types.AppStateData> =>
 {
-  const spinner = new Spinner("Fetching daily question.");
+  const spinner = new Spinner("Fetching daily question");
   spinner.start();
 
   // Check if the question has been already fetched
@@ -298,11 +341,14 @@ const DailyCommand = async (data: string[], state: types.AppStateData)
     // Once we have fetched the daily question we need to fetch the details
     const title_slug = daily_question.activeDailyCodingChallengeQuestion.question.titleSlug;
     const details = await lc.FetchQuestion({titleSlug: title_slug});
-    state.dailyQuestion = details!;
+    state.dailyQuestion = generic.MergeStructures<types.DetailedQuestionData>(
+      details!.question, daily_question.activeDailyCodingChallengeQuestion.question);
+
+    state.dailyQuestion.link = `https://leetcode.com${daily_question.activeDailyCodingChallengeQuestion.link}`;
 
     spinner.stop();
 
-    utils.PrintQuestionSummary(details!);
+    PrintQuestionSummary(state.dailyQuestion);
   }
 
   // Check if also the create command has been given
@@ -310,9 +356,9 @@ const DailyCommand = async (data: string[], state: types.AppStateData)
     spinner.changeMessage("Creating instance for daily question.");
     spinner.stop();
 
-    const question_id = state.dailyQuestion.question.questionFrontendId;
+    const question_id = Number.parseInt(state.dailyQuestion.questionFrontendId);
     const folder = state.variables["FOLDER"].value as string;
-    const existing_ids = await utils.GetExistingProblems(folder);
+    const existing_ids = await generic.GetExistingProblems(folder);
     
     if (existing_ids.includes(question_id)) {
       spinner.stop();
@@ -321,7 +367,7 @@ const DailyCommand = async (data: string[], state: types.AppStateData)
     }
 
     // If it does not exists then create the instance
-    utils.CreateQuestionInstance(state.dailyQuestion, folder);
+    generic.CreateQuestionInstance(state.dailyQuestion, folder);
   }
 
   spinner.stop();
