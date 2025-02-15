@@ -1,6 +1,6 @@
 """
 QUESTION TITLE: Valid Parentheses
-QUESTION LINK: https://leetcode.com/problems/valid-parentheses
+QUESTION LINK: undefined
 QUESTION TAGS: String, Stack
 QUESTION LEVEL: Easy
 """

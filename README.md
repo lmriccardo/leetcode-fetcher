@@ -5,6 +5,11 @@
 
 <img src="https://img.shields.io/badge/License-MIT-green.svg"/>
 <img src="https://img.shields.io/npm/v/npm.svg?logo=nodedotjs"/>
+<img src="https://img.shields.io/github/v/release/lmriccardo/leetcode-fetcher"/>
+<img src="https://img.shields.io/npm/dm/leetcode-fetcher-cli?&logo=npm"/>
+<img src="https://img.shields.io/github/downloads/lmriccardo/leetcode-fetcher/total?logo=github
+"/>
+<img src="https://img.shields.io/docker/pulls/lmriccardo/leetcode-fetcher?logo=docker"/>
 
 ![LeetCode](https://img.shields.io/badge/LeetCode-000000?style=for-the-badge&logo=LeetCode&logoColor=#d16c06)
 ![Node.js](https://img.shields.io/badge/Node.js-%2320232a?style=for-the-badge&logo=node.js&logoColor=43853D)
@@ -13,7 +18,7 @@
 <p><strong>NPM Package</strong>: <a href="https://www.npmjs.com/package/leetcode-fetcher-cli">https://www.npmjs.com/package/leetcode-fetcher-cli</a></p>
 <p><strong>Docker Repository</strong>: <a href="https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general">https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general</a></p>
 
-<p><strong>Current Version</strong>: v0.1.1 (Release, Development)</p>
+<p><strong>Current Version</strong>: v0.1.1 (Release), v0.1.2 (Development)</p>
 
 </div>
 
@@ -92,16 +97,16 @@ If you type `help` the list with all possible commands will appear. That is, the
 | _Help_    | `help [cmd1 cmd2 ...]`          | Shows the helper message for each given command. If no command is provided, consider all.                                                                                     |
 | _Set_     | `set [VAR value ...]`           | Set the value of the specified variable. To inspect available variables use the `show` command.                                                                               |
 | _Unset_   | `unset [VAR1 VAR2 ...]`         | Unset variables bringing back to their default values.                                                                                                                        |
-| _Show_    | `show [SENSITIVE]`              | Shows values and informations about the application state and variables. If sensitive is given then also user cookies are shown.                                              |
+| _Show_    | `show [sensitive]`              | Shows values and informations about the application state and variables. If sensitive is given then also user cookies are shown.                                              |
 | _List_    | `list`                          | Locally fetches a number of problems from leetcode. The search is filtered using the _variables_ set with `set` or `unset`                                                    |
-| _Detail_  | `detail <id/idx> [BYID\|BYIDX]` | Print details about a specified problem. A problem is specified either by local indexing, or remote question IDs.                                                             |
-| _Fetch_   | `fetch <NAME\|ID> <value>`      | Fetch locally a single problem from remote. The problem is specified either using the title-slug or the remote ID.                                                            |
+| _Detail_  | `detail idx` | Print details about a specified problem. A problem is specified either by local indexing, or remote question IDs.                                                             |
+| _Fetch_   | `fetch <title\|id> value`      | Fetch locally a single problem from remote. The problem is specified either using the title-slug or the remote ID.                                                            |
 | _Create_  | `create <idx>`                  | Create a problem instance in the provided target folder (which is a variable). The problem is specified only by the local index which means that must already exists locally. |
-| _Save_    | `save FILEPATH`                 | Saves the current state into a json file                                                                                                                                      |
-| _Load_    | `load FILEPATH`                 | Loads the state from a json file                                                                                                                                              |
+| _Save_    | `save filepath`                 | Saves the current state into a json file                                                                                                                                      |
+| _Load_    | `load filepath`                 | Loads the state from a json file                                                                                                                                              |
 | _Clear_   | `clear`                         | Clears the screen content                                                                                                                                                     |
 | _Login_   | `login`                         | Open a browser to perform the login and starts a leetcode session.                                                                                                            |
-| _Inspect_ | `inspect [USERNAME]`            | Inspect a given user profile if it exists, or the current logged one                                                                                                          |
+| _Inspect_ | `inspect [username]`            | Inspect a given user profile if it exists, or the current logged one                                                                                                          |
 | _Daily_   | `daily [create]`                | Fetch the current daily question and optionally create an instance                                                                                                            |
 | _Quit_    | `quit`                          | Quit the application                                                                                                                                                          |
 | _Watch_   | `watch <question-idx\|daily>`   | Cache the given problem for future tests or submissions. An instance of the given problem is create if it does not exists.                                                    |
@@ -113,19 +118,13 @@ In order to obtain more informations about the commands, run the `help` command.
 An output example is already present in the <a href="./examples/python/9-palindrome-number">./examples/python/9-palindrome-number</a> folder. It has been obtained running the following commands:
 
 ```
-[XXX] >> (Type help for commands): fetch ID 9
+[XXX] >> (Type help for commands): fetch id 9
 
-Used Filter CATEGORY:    algorithms
-Used Filter LIMIT:       20
-Used Filter SKIP:        0
-Used Filter DIFFICULTY:  ALL
-
-Total Problems   : 3435
 Fetched Problems : 1
 
- STATUS  IDX  ID  DIFFICULTY        TITLE        TAGS
+STATUS  IDX  ID  DIFFICULTY        TITLE        TAGS
 
- ❌🙉📹   0   9      Easy     Palindrome Number  Math
+ ❌🙉💲   0   9      Easy     Palindrome Number  Math
 
 [XXX] >> (Type help for commands): set FOLDER ./examples/python
 [XXX] >> (Type help for commands): create 0
@@ -134,5 +133,4 @@ Fetched Problems : 1
 
 ## Current Limitations and futures 🚧
 
-- Up to now, the only possible target language to save the problem code snippet is Python3. 
-- Source code formatting bug when the problem introduces structures or mulitple function definition (try a tree problem)
+- Up to now, the only possible target language to save the problem code snippet is Python3.

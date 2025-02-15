@@ -1,6 +1,6 @@
 """
 QUESTION TITLE: Palindrome Number
-QUESTION LINK: https://leetcode.com/problems/palindrome-number
+QUESTION LINK: undefined
 QUESTION TAGS: Math
 QUESTION LEVEL: Easy
 """
