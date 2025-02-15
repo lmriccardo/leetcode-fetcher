@@ -28,6 +28,7 @@
 - [x] Fixed a the `list` command bug when setting DIFFICULTY != from ALL
 - [x] Check that when showin' the problems, it actually labels downloaded ones
 - [x] Check that `fetch` command does not append already fetched problems
+- [x] `list` or `fetch` command does not add the link field to the final struct
 - [ ] When loading a state, the loaded problems are appended to the existing ones
 - [ ] The daily question does not show up when looking at the state
 - [x] `inspect` command output has problems with submissions timestamps
@@ -50,6 +51,7 @@
   + `problems`: shows all the problems
   + `downloaded`: shows only downloaded problems
 
+- [ ] Add two `daily` options: `month` and `year` to specify which dailies to fetch
 - [x] Add the `force` subcommand to `login`, to the force the login
 - [ ] Handle Third-Party Login, e.g., Github etc ...
 
