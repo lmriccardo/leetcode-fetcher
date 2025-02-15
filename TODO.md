@@ -39,8 +39,8 @@
 
 #### Refactoring
 
-- [?] Refactors the entire application state
-- [?] Refactors some GraphQL query (to make them smaller than now)
+- [x] Refactors the entire application state
+- [x] Refactors some GraphQL query (to make them smaller than now)
 - [ ] Refactors the `detail` output
 
 #### New Features
@@ -53,7 +53,7 @@
 
 - [ ] Add two `daily` options: `month` and `year` to specify which dailies to fetch
 - [x] Add the `force` subcommand to `login`, to the force the login
-- [ ] Handle Third-Party Login, e.g., Github etc ...
+- [?] Handle Third-Party Login, e.g., Github etc ...
 
 #### Updates
 

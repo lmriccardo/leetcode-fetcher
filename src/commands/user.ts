@@ -6,7 +6,7 @@
  * - inspect [Inspect the overall statistics of a user, or the current logged one]
  */
 
-import { randomBytes } from 'crypto';
+import { hash, randomBytes } from 'crypto';
 import { HTTPRequest, HTTPResponse } from 'puppeteer';
 import { Spinner } from '../pprint';
 import { HashPassword, OpenLoginBrowser } from '../utils/general';
@@ -19,6 +19,7 @@ import chalk from 'chalk';
 
 const HandleResponse = async (state: types.AppStateData, response: HTTPResponse) =>
 {
+  // Classical login through LeetCode
   if (response.url().startsWith(constants.SITES.LOGIN_PAGE.URL))
   {
     const request = response.request(); // Get the corresponding request
@@ -45,7 +46,50 @@ const HandleResponse = async (state: types.AppStateData, response: HTTPResponse)
     Array.from(matches).forEach((value: RegExpExecArray) => {
       state.cookies![value[1] as keyof types.LeetcodeSessionCookies] = value[2];
     });
+    return;
   }
+
+  // Login using Github
+  if (response.url().startsWith(constants.SITES.THIRD_PARTY.GITHUB.SESSION)) {
+    const response_status_code = response.status();
+    const request = response.request();
+    
+    // If the response is not a redirect or the request has no post data
+    if (response_status_code !== 302 || !request.hasPostData()) return;
+
+    const request_post_data = request.postData();
+    const params = new URLSearchParams(request_post_data);
+    
+    // From the (key, value) pairs select those corresponding to username and password
+    let content: {[key: string]: string} = {};
+    for (const [key, value] of params.entries()) {
+      if (["login", "password"].includes(key)) {
+        content[key] = value;
+      }
+    }
+    
+    // Creates the salt and hash the password
+    const salt = randomBytes(16).toString('hex');
+    const hash_pwd = HashPassword(content.password, salt);
+    state.userLogin ={username: content.login, password: hash_pwd, salt: salt};
+    state.selectedUser = content.login;
+
+    return;
+  }
+
+  if (response.url().startsWith(constants.SITES.THIRD_PARTY.GITHUB.CALLBACK)) {
+    const headers = response.headers();
+
+    const matches = headers['set-cookie'].matchAll(/^([\w_]+)=([^;]+)/gm);
+    state.cookies = { csrftoken: "", messages: "", LEETCODE_SESSION: "" };
+    Array.from(matches).forEach((value: RegExpExecArray) => {
+      state.cookies![value[1] as keyof types.LeetcodeSessionCookies] = value[2];
+    });
+
+    return;
+  }
+
+  // Some other methods goes here ...
 }
 
 const HandleRequest = async (request: HTTPRequest) =>
@@ -89,7 +133,7 @@ const LoginCommand = async (data: string[], state: types.AppStateData)
     console.warn(chalk.yellowBright("[WARNING] Login has been forced. No check on current session."));
   }
 
-  if (!state.userLogin || forced) {
+  if (!(state.userLogin && state.cookies) || forced) {
     spinner.changeMessage("User Logging in");
     spinner.start();
 
@@ -105,8 +149,10 @@ const LoginCommand = async (data: string[], state: types.AppStateData)
     spinner.stop();
   }
 
-  if (!state.userLogin) {
+  if (!(state.userLogin && state.cookies)) {
     console.log(chalk.red('User login has been stopped.'));
+    state.userLogin = undefined;
+    state.cookies = undefined;
     return state;
   }
 
