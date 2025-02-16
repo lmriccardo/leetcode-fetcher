@@ -66,8 +66,11 @@ const ListCommand = async (_: string[], state: types.AppStateData)
           return null;
         }
 
-        return generic.MergeStructures<types.DetailedQuestionData>(
+        const merged_result = generic.MergeStructures<types.DetailedQuestionData>(
           value, question_data.question);
+
+        merged_result.link = `https://leetcode.com/problems/${title}/description`;
+        return merged_result;
       }
     )
   );
@@ -186,6 +189,8 @@ const FetchCommand = async (data: string[], state: types.AppStateData)
 
   const detailed_data = generic.MergeStructures<types.DetailedQuestionData>(
     question_data.question, problems_data.problemsetQuestionList.questions[0]);
+  
+  detailed_data.link = `https://leetcode.com/problems/${question_title}/description`;
 
   await PrintProblemsSummary({count: 1, questions: [detailed_data]}, state.variables);
 
