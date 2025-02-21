@@ -33,7 +33,10 @@
 - [ ] The daily question does not show up when looking at the state
 - [x] `inspect` command output has problems with submissions timestamps
 - [ ] Sometimes, when creating an instance, an error occurs releated to the README file
-- [ ] When the response is taking too long to arrive, it then elapses and returns an error
+- [?] When the response is taking too long to arrive, it then elapses and returns an error
+
+  - It is quite strange, since in the code all possible null returns are correctly handled
+
 - [x] Now, even if logged in it seems that it does not check solved problems
 - [x] When listing problems it says that the solution is available, but it is not
 
@@ -53,7 +56,7 @@
 
 - [ ] Add two `daily` options: `month` and `year` to specify which dailies to fetch
 - [x] Add the `force` subcommand to `login`, to the force the login
-- [?] Handle Third-Party Login, e.g., Github etc ...
+- [x] Handle Third-Party Login, e.g., Github etc ...
 
 #### Updates
 

@@ -97,6 +97,15 @@ export const FetchDailyQuestion = async () : Promise<types.QuestionOfToday_Outpu
 }
 
 /**
+ * Fetches the username of the current logged user, or the current user session
+ */
+export const FetchUsername = async (header?: HeadersInit) : Promise<string | undefined | null> => 
+{
+  return createGraphQLFetcher((x: {userStatus: {username?: string}}) => x.userStatus.username,
+    queries.user.userStatus, constants.SITES.GRAPHQL.URL, header)({});
+}
+
+/**
  * Fetches the input user profile from LeetCode through the graphql endpoint. 
  */
 export const FetchUserProfile = async (vars: types.QueryVariables, headers?: HeadersInit) 
@@ -194,7 +203,8 @@ export const GetUserData = async (username: string, state: types.AppStateData) :
   spinner.start();
 
   const variables = {username: username};
-  const user_profile = await FetchUserProfile(variables)
+  let headers = formatter.FormatCookies(state.cookies);
+  const user_profile = await FetchUserProfile(variables, headers);
 
   // Check that the provided user exists
   if (user_profile?.matchedUser === null) {

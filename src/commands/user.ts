@@ -6,16 +6,32 @@
  * - inspect [Inspect the overall statistics of a user, or the current logged one]
  */
 
-import { hash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import { HTTPRequest, HTTPResponse } from 'puppeteer';
 import { Spinner } from '../pprint';
 import { HashPassword, OpenLoginBrowser } from '../utils/general';
-import { FormatString } from '../utils/formatter';
+import { FormatString, FormatCookies } from '../utils/formatter';
 import { PrintUserSummary } from '../utils/printer';
 import * as types from '../types';
 import * as lc from '../leetcode';
 import constants from '../constants';
 import chalk from 'chalk';
+
+const SetLoginDetails = (state: types.AppStateData, params: URLSearchParams, user_str: string, pwd_str: string) => 
+{
+  let content: {[key: string]: string} = {};
+    for (const [key, value] of params.entries()) {
+      if ([user_str, pwd_str].includes(key)) {
+        content[key] = value;
+      }
+    }
+    
+    // Creates the salt and hash the password
+    const salt = randomBytes(16).toString('hex');
+    const hash_pwd = HashPassword(content[pwd_str], salt);
+    state.userLogin ={username: content[user_str], password: hash_pwd, salt: salt};
+    state.selectedUser = content[user_str];
+}
 
 const HandleResponse = async (state: types.AppStateData, response: HTTPResponse) =>
 {
@@ -61,23 +77,16 @@ const HandleResponse = async (state: types.AppStateData, response: HTTPResponse)
     const params = new URLSearchParams(request_post_data);
     
     // From the (key, value) pairs select those corresponding to username and password
-    let content: {[key: string]: string} = {};
-    for (const [key, value] of params.entries()) {
-      if (["login", "password"].includes(key)) {
-        content[key] = value;
-      }
-    }
-    
-    // Creates the salt and hash the password
-    const salt = randomBytes(16).toString('hex');
-    const hash_pwd = HashPassword(content.password, salt);
-    state.userLogin ={username: content.login, password: hash_pwd, salt: salt};
-    state.selectedUser = content.login;
-
+    SetLoginDetails(state, params, "login", "password");
     return;
   }
 
-  if (response.url().startsWith(constants.SITES.THIRD_PARTY.GITHUB.CALLBACK)) {
+  if (
+    (
+         response.url().startsWith(constants.SITES.THIRD_PARTY.GITHUB.CALLBACK)
+      || response.url().startsWith(constants.SITES.THIRD_PARTY.LINKEDIN.CALLBACK)
+    )
+  ) {
     const headers = response.headers();
 
     const matches = headers['set-cookie'].matchAll(/^([\w_]+)=([^;]+)/gm);
@@ -89,7 +98,20 @@ const HandleResponse = async (state: types.AppStateData, response: HTTPResponse)
     return;
   }
 
-  // Some other methods goes here ...
+  // Login using Linkedin
+  if (response.url().startsWith(constants.SITES.THIRD_PARTY.LINKEDIN.SESSION)) {
+    const response_status_code = response.status();
+    const request = response.request();
+    
+    // If the response is not a redirect or the request has no post data
+    if (response_status_code !== 303 || !request.hasPostData()) return;
+
+    const request_post_data = request.postData();
+    const params = new URLSearchParams(request_post_data);
+    SetLoginDetails(state, params, "session_key", "session_password");
+
+    return;
+  }
 }
 
 const HandleRequest = async (request: HTTPRequest) =>
@@ -156,7 +178,17 @@ const LoginCommand = async (data: string[], state: types.AppStateData)
     return state;
   }
 
-  const username = chalk.bold(state.userLogin.username);
+  let headers = FormatCookies(state.cookies);
+  const username = await lc.FetchUsername(headers);
+
+  if (!username) {
+    console.error(chalk.redBright(`User ${state.userLogin.username} does not have access.`));
+    state.userLogin = undefined;
+    state.cookies = undefined;
+    return state;
+  }
+
+  state.userLogin.username = username!;
   const success = chalk.greenBright("successfully");
   console.log(`User ${username} has ${success} logged.`);
 

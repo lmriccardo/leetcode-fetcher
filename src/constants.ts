@@ -43,6 +43,10 @@ const constants = {
       GITHUB: {
         CALLBACK: "https://leetcode.com/accounts/github/login/callback/",
         SESSION: "https://github.com/session"
+      },
+      LINKEDIN: {
+        CALLBACK: "https://leetcode.com/accounts/linkedin_oauth2/login/callback/",
+        SESSION: "https://www.linkedin.com/checkpoint/lg/login-submit"
       }
     }
   },

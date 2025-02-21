@@ -105,12 +105,37 @@ query recentSubmissions($username: String!, $limit: Int) {
   }
 }`
 
+
+const userStatus = `#graphql
+query globalData {
+  userStatus {
+    userId
+    isSignedIn
+    isMockUser
+    isPremium
+    isVerified
+    username
+    avatar
+    isAdmin
+    isSuperuser
+    permissions
+    isTranslator
+    activeSessionId
+    checkedInToday
+    notificationStatus {
+      lastModified
+      numUnread
+    }
+  }
+}`;
+
 const userql: Record<string, string> = {
   userPublicProfile   : userPublicProfile,
   languageStats       : languageStats,
   userProblemSolved   : userProblemSolved,
   recentAcSubmissions : recentAcSubmissions,
-  recentSubmissions   : recentSubmissions
+  recentSubmissions   : recentSubmissions,
+  userStatus          : userStatus
 };
 
 export default userql;
