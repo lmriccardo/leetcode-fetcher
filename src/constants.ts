@@ -38,6 +38,16 @@ const constants = {
       "Accept-Language" : "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       "Connection" : "keep-alive",
       "Cache-Control": "no-cache",
+    },
+    THIRD_PARTY: {
+      GITHUB: {
+        CALLBACK: "https://leetcode.com/accounts/github/login/callback/",
+        SESSION: "https://github.com/session"
+      },
+      LINKEDIN: {
+        CALLBACK: "https://leetcode.com/accounts/linkedin_oauth2/login/callback/",
+        SESSION: "https://www.linkedin.com/checkpoint/lg/login-submit"
+      }
     }
   },
   PROMPT: {
