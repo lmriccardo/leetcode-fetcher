@@ -57,6 +57,7 @@
 - [ ] Add two `daily` options: `month` and `year` to specify which dailies to fetch
 - [x] Add the `force` subcommand to `login`, to the force the login
 - [x] Handle Third-Party Login, e.g., Github etc ...
+- [ ] Find a way to shows the percentile resulting from the submission
 
 #### Updates
 
