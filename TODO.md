@@ -44,7 +44,9 @@
 
 - [x] Refactors the entire application state
 - [x] Refactors some GraphQL query (to make them smaller than now)
-- [ ] Refactors the `detail` output
+- [?] Refactors the `detail` output
+  - [x] Introduce HTML Parser that converts HTML into printable strings
+  - [ ] Introduce Image visualization
 
 #### New Features
 

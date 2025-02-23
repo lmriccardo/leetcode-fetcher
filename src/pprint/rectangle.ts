@@ -1,3 +1,4 @@
+import Printable from './printer';
 import chalk from 'chalk';
 import * as formatter from '../utils/formatter'
 
@@ -13,7 +14,7 @@ const ascii: {[k: string]: string} =
 
 declare type Padding = {lpad?: number, rpad?: number, upad?: number, dpad?: number};
 
-class RectangleBox {
+class RectangleBox extends Printable {
   private hsize: number = 0;
   private wsize: number;
   private content: string[] = [];
@@ -24,6 +25,7 @@ class RectangleBox {
   private style: (x: string) => string;
 
   constructor(wsize: number, just?: number, style?: (x: string) => string) {
+    super();
     this.wsize = wsize;
     this.just = just ?? 0;
     this.contentpad = {lpad: 1, rpad: 1, upad: 1, dpad: 1};

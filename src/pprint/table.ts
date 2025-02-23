@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import Printable from "./printer";
 import * as generic from '../utils/general'
 import * as formatter from '../utils/formatter'
 
@@ -21,7 +22,7 @@ function getVisibleTextLength(input: string) {
   return strippedText.length;
 }
 
-class TablePrinter {
+class TablePrinter extends Printable {
   private ncols: number = 0;
   private nrows: number = 0;
   private columns: string[] = [];
@@ -35,6 +36,8 @@ class TablePrinter {
   private show_title: boolean = true;
 
   constructor(title?: string, cols?: string[], props?: ColumnProperties[]) {
+    super();
+    
     // If both columns and props are given check that the dimensions matches.
     if (cols !== undefined && props !== undefined) {
       if (cols.length !== props.length) {

@@ -9,7 +9,7 @@
  *  - daily  [Fetch the current daily question]
  */
 
-import { Spinner } from '../pprint';
+import { Spinner, HTMLDocumentPrinter } from '../pprint';
 import { PrintProblemsSummary, PrintQuestionSummary, PrintUsedFilters } from '../utils/printer';
 import chalk from 'chalk';
 import * as types from '../types';
@@ -220,13 +220,17 @@ export const fetch_command: types.AppCommandData = {
 const DetailCommand = async (data: string[], state: types.AppStateData) 
   : Promise<types.AppStateData> => 
 {
+  if (data.length < 1) {
+    console.error(chalk.redBright("[ERROR] No problem index provided."));
+    return state;
+  }
+
   const problem_idx = Number.parseInt(data[0]); // Local index of the fetched problem
 
   // First we need to check for out of bound indexing
   if (!state.fetchedProblems) {
     console.error(chalk.yellowBright(
-      "[WARNING] Still no fetched problems. Please" +
-      "fetch using either list or fetch commads."
+      "[WARNING] Still no fetched problems. Please fetch using either list or fetch commads."
     ));
   }
 
@@ -236,7 +240,11 @@ const DetailCommand = async (data: string[], state: types.AppStateData)
   }
 
   const problem_data = state.fetchedProblems!.questions[problem_idx];
-  console.log(problem_data);
+  // console.log(problem_data);
+
+  // console.log(problem_data.content);
+  const html_printer = new HTMLDocumentPrinter(problem_data.content);
+  console.log(html_printer.toString());
 
   return state;
 }

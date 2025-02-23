@@ -18,7 +18,7 @@
 <p><strong>NPM Package</strong>: <a href="https://www.npmjs.com/package/leetcode-fetcher-cli">https://www.npmjs.com/package/leetcode-fetcher-cli</a></p>
 <p><strong>Docker Repository</strong>: <a href="https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general">https://hub.docker.com/repository/docker/lmriccardo/leetcode-fetcher/general</a></p>
 
-<p><strong>Current Version</strong>: v0.1.1 (Release), v0.1.2 (Development)</p>
+<p><strong>Current Version</strong>: v0.1.2 (Release), v0.1.3 (Development)</p>
 
 </div>
 
