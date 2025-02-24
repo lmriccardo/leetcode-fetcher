@@ -69,7 +69,34 @@ class JFIFImageDecoder {
     const appo_len = this.buffer.readUInt16BE(4) + 2;
     console.log("APP0 length: ", appo_len);
 
-    console.log(this.buffer.readUInt16BE(2 + appo_len + 2));
+    this.position = appo_len + 4;
+    const dqt_size = this.buffer.readUInt16BE(this.position);
+    console.log(`DQT-specification size: ${dqt_size}`);
+
+    this.position += 2;
+    const lqtq = this.buffer.readUInt8(this.position);
+    const lq = lqtq >> 4;
+    const tq = lqtq & ~(lq << 4);
+    console.log(`Lq = ${lq} - Tq = ${tq}`);
+
+    this.position += 1
+
+    const ntables = Math.floor(dqt_size / (65 + 64 * lqtq))
+    console.log(`Number of tables: ${ntables}`);
+
+    // Use the Lq value as an index to select the byte size
+    const bytesToRead = [1,2][lq]; // 1 for lq=0, 2 for lq=1    
+    let counter = 0;
+    for (let byte_pos = 0; byte_pos < dqt_size - 3; byte_pos += bytesToRead) {
+      const bytesValue = bytesToRead === 1 ? this.buffer.readUInt8(this.position)
+          : this.buffer.readUInt16BE(this.position);
+
+      console.log(`[Position ${this.position}] ${bytesValue.toString(16)}`);
+      this.position += bytesToRead;
+      counter++;
+    }
+
+    console.log(`Read ${counter} bytes`);
 
     this.ready = true; // Set the ready variable to true
   }
@@ -88,7 +115,6 @@ const FetchImage = async () =>
   // Decode the byte buffer into image datas
   const decoder = new JFIFImageDecoder(buffer);
   await decoder.decode();
-  console.log(decoder.isDataReady, decoder.isError);
 }
 
 FetchImage();
