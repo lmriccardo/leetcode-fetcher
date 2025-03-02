@@ -20,8 +20,8 @@ abstract class JPGMarker implements Decodable {
   constructor(name: string, code: number, buffer: Uint8Array) {
     this.name = name;
     this.code = code;
-    this.length = 0;
     this.buffer = Buffer.from(buffer);
+    this.length = this.buffer.readUInt16BE(2);
   }
 
   public get markerLength(): number { return this.length; }
@@ -90,7 +90,6 @@ class JPEG_APP0Marker extends JPEG_APPnMarker {
   }
   
   decodeSync(): void {
-    this.length = this.buffer.readUInt16BE(2); // Read the length
     this.version = this.buffer.readUInt16BE(9); // Read the version (skips the identifier)
     this.units = this.buffer.readUInt8(11); // Read the units for X and Y
     this.x_density = this.buffer.readUInt16BE(12); // Read the X density
@@ -122,18 +121,49 @@ class JPEG_APP0Marker extends JPEG_APPnMarker {
     const major_v = this.version >> 8;
     const minor_v = this.version & ~(major_v << 8);
     const informations = (
-      `|  - Identifier              : ${this.identifier}\n`                        + 
-      `|  - Version                 : v${major_v}.${minor_v}\n`                       +
+      `|  - Identifier              : ${this.identifier}\n`                             + 
+      `|  - Version                 : v${major_v}.${minor_v}\n`                         +
       `|  - Units                   : ${JPEG_APP0Marker.unitsToString(this.units)}\n`   +
-      `|  - X Pixel Density         : ${this.x_density}\n`           +
-      `|  - Y Pixel Density         : ${this.y_density}\n`             +
-      `|  - Thumbnail X pixel count : ${this.x_thumbnail}\n` +
+      `|  - X Pixel Density         : ${this.x_density}\n`                              +
+      `|  - Y Pixel Density         : ${this.y_density}\n`                              +
+      `|  - Thumbnail X pixel count : ${this.x_thumbnail}\n`                            +
       `|  - Thumbnail Y pixel count : ${this.y_thumbnail}\n`
     );
 
     return summary + '\n' + informations;
   }
 }
+
+/**
+ * The End Of Image Marker that must be place at the end of the buffer.
+ */
+class JPEG_EOIMarker extends JPGMarker {
+  constructor(buffer: Uint8Array) { super('EOI - End Of Image', 0xFFD9, buffer); }
+  decodeSync(): void { }
+  override toString(): string { return super.toString(); }
+};
+
+/**
+ * This marker segment contains the definition of the Quantization Table
+ * for a particular destination. Its elements represent the index in the
+ * zig-zag ordering of the DCT (Discrete cosine transform) coefficients.
+ * 
+ * A single marker can contains multiple tables, however it is not required
+ * since other tables can be defined elsewhere in the buffer.
+ */
+class JPEG_DQTMarker extends JPGMarker {
+  private p_q: number[];   // Table element precision
+  private t_q: number[];   // Table destination identifier
+  private q_k: number[]; // Table elements
+
+  constructor(buffer: Uint8Array) {
+    super('DQT - Define Quantization Table', 0xFFD9, buffer); 
+  }
+
+  decodeSync(): void {
+
+  }
+};
 
 class JFIFImageDecoder implements Decodable {
   private buffer   : Buffer;      // The buffer of bytes with the image
@@ -145,6 +175,7 @@ class JFIFImageDecoder implements Decodable {
   // ---------------------- Marker Section ----------------------
   private soi_marker  : JPEG_SOIMarker  | null; // The Start Of Image Marker
   private app0_marker : JPEG_APP0Marker | null; // The Application0 (for JFIF) Marker
+  private eoi_marker  : JPEG_EOIMarker  | null; // The End Of Image Marker
   // ------------------------------------------------------------
 
   static isValidJFIF(buffer: Buffer): boolean {
@@ -164,6 +195,7 @@ class JFIFImageDecoder implements Decodable {
     this.position = 0;
     this.soi_marker = null;
     this.app0_marker = null;
+    this.eoi_marker = null;
   }
 
   public get isDataReady() : boolean { return this.ready || this.error; }
@@ -196,6 +228,12 @@ class JFIFImageDecoder implements Decodable {
 
     this.position += this.app0_marker.markerLength;
     console.log(this.app0_marker.toString());
+
+    // From now on, there is no requirements on which marker is present
+    // For this reason, we should loop until the EOI is not reached.
+    while (this.eoi_marker === null) {
+
+    }
 
     this.ready = true; // Set the ready variable to true
   }
