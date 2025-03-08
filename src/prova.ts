@@ -10,7 +10,9 @@ const COMMON_MARKERS: {[key: string] : number} =
   APP0_MARKER : 0xFFE0, // Application 0 (JFIF-specific) marker
   DQT_MARKER  : 0xFFDB, // Define Quantization Table Marker
   DHT_MARKER  : 0xFFC4, // Define Huffman Table Marker
-  EOI_MARKER  : 0xFFD9 // End Of Image Marker
+  SOS_MARKER  : 0xFFDA, // Define the Start Of Scan Marker
+  DNL_MARKER  : 0xFFDC, // Define Number of lines Marker
+  EOI_MARKER  : 0xFFD9  // End Of Image Marker
 };
 
 const VectorToString = (values: number[], x_dim: number, line_prefix: string) : string => 
@@ -32,6 +34,13 @@ const VectorToString = (values: number[], x_dim: number, line_prefix: string) : 
   return string_result + ']';
 }
 
+const SplitByte = (value: number) : [number, number] => 
+{
+  const value1 = value >> 4;
+  const value2 = value & ~(value1 << 4);
+  return [value1, value2];
+}
+
 interface Decodable {
   decodeSync() : void;           // A synchronous decode method
   decode()     : Promise<void>;  // The decode asynchronous version
@@ -41,13 +50,19 @@ interface Printable {
   toString() : string;
 }
 
-abstract class JPGMarker implements Decodable, Printable {
+abstract class AsyncDecodable implements Decodable {
+  abstract decodeSync(): void;
+  decode() : Promise<void> { throw new Error('JPGMarker:decode:NotImplementedYet') }
+}
+
+abstract class JPGMarker extends AsyncDecodable implements Printable {
   protected name   : string; // The name of the marker
   protected code   : number; // The corresponding code 0xFFxy
   protected length : number; // The length of the marker (length + 2)
   protected buffer : Buffer; // The buffer containing the marker
 
   constructor(name: string, code: number, buffer: Uint8Array) {
+    super();
     this.name = name;
     this.code = code;
     this.buffer = Buffer.from(buffer);
@@ -134,8 +149,12 @@ class MarkerAggregator<T extends JPG_TableMarker> implements Printable {
  * The SOI JPEG Marker - Start Of Image (0xFFD8)
  */
 class JPEG_SOIMarker extends JPGMarker {
-  constructor(buffer: Uint8Array) {super('SOI - Start Of Image', COMMON_MARKERS.SOI_MARKER, buffer);}
-  decodeSync(): void {}
+  constructor(buffer: Uint8Array) {
+    super('SOI - Start Of Image', COMMON_MARKERS.SOI_MARKER, buffer);
+    this.decodeSync();
+  }
+  
+  decodeSync(): void { this.length = 2; }
   override toString(): string { return super.toString(); }
 }
 
@@ -230,8 +249,12 @@ class JPEG_APP0Marker extends JPEG_APPnMarker {
  * The End Of Image Marker that must be place at the end of the buffer.
  */
 class JPEG_EOIMarker extends JPGMarker {
-  constructor(buffer: Uint8Array) { super('EOI - End Of Image', COMMON_MARKERS.EOI_MARKER, buffer); }
-  decodeSync(): void { }
+  constructor(buffer: Uint8Array) {
+    super('EOI - End Of Image', COMMON_MARKERS.EOI_MARKER, buffer);
+    this.decodeSync();
+  }
+
+  decodeSync(): void { this.length = 2; }
   override toString(): string { return super.toString(); }
 };
 
@@ -264,10 +287,7 @@ class JPEG_DQTMarker extends JPG_TableMarker {
 
   decodeSync(): void {
     let position = 0;
-    const pqtq = this.buffer.readUInt8(position);
-    this.p_q = pqtq >> 4;
-    this.t_q = pqtq & ~(this.p_q << 4);
-    position += 1;
+    [this.p_q, this.t_q] = SplitByte(this.buffer.readUInt8(position++));
     
     // The Pq parameter specifies how many bytes to read for each
     // element of the table, therefore the precision. 
@@ -284,7 +304,7 @@ class JPEG_DQTMarker extends JPG_TableMarker {
     this.length = currLen + 5;
   }
 
-  toString(): string {
+  override toString(): string {
     const summary = super.toString();
     const precision: string = {0 : '8-bits', 1: '16-bits'}[this.p_q]!;
     const spaces = ' '.repeat(25);
@@ -332,12 +352,8 @@ class JPEG_DHTMarker extends JPGMarker {
 
   decodeSync(): void {
     let position = 0; // Skips the length bytes
-    const tcth = this.buffer.readUInt8(position);
-    this.t_c = tcth >> 4;
-    this.t_h = tcth & ~(this.t_c << 4);
+    [this.t_c, this.t_h] = SplitByte(this.buffer.readUInt8(position++));
 
-    // Read the number of Huffman codes for each length
-    position++;
     let total_len = 0;
     for (let idx = 0; idx < 16; idx++) {
       this.l_i.push(this.buffer.readUInt8(position++));
@@ -360,7 +376,7 @@ class JPEG_DHTMarker extends JPGMarker {
     this.length = 17 + total_len + 4;
   }
 
-  toString(): string {
+  override toString(): string {
     const summary = super.toString();
 
     const table_class_map : {[key: number] : string} =
@@ -461,15 +477,15 @@ class JPEG_SOFnMarker extends JPGMarker {
 
     for (let counter = 0; counter < this.n_f; counter++) {
       this.c_i.push(this.buffer.readUInt8(position));
-      const hivi = this.buffer.readUInt8(position + 1);
-      this.h_i.push(hivi >> 4);
-      this.v_i.push(hivi & ~((hivi >> 4) << 4));
+      const [h_i, v_i] = SplitByte(this.buffer.readUInt8(position + 1));
+      this.h_i.push(h_i);
+      this.v_i.push(v_i);
       this.tq_i.push(this.buffer.readUInt8(position + 2));
       position = position + 3;
     }
   }
 
-  toString(): string {
+  override toString(): string {
     const summary = super.toString();
 
     const c_spaces = ' '.repeat(37);
@@ -496,22 +512,275 @@ class JPEG_SOFnMarker extends JPGMarker {
   }
 }
 
-class JFIFImageDecoder implements Decodable {
-  private buffer   : Buffer;      // The buffer of bytes with the image
-  private image    : number[][];  // Will contains the image data
-  private ready    : boolean;     // True, whenever image data are ready
-  private error    : boolean;     // If the input buffer is invalid is True
-  private position : number;      // The current position inside the buffer
+/**
+ * Start of Scan Marker - 0xFFDA
+ */
+class JPEG_SOSMarker extends JPGMarker {
+  private n_s : number   =  0; // Number of image components (nof triplets (Csj, Tdj, Taj))
+  private c_s : number[] = []; // Scan component selector (specifies which of the N_f components)
+  private t_d : number[] = []; // DC entropy coding table destinations
+  private t_a : number[] = []; // AC entropy coding table destinations
+  private s_s : number   =  0; // Start of spectral or predictor selection
+  private s_e : number   =  0; // End of spectral or predictor selection
+  private a_h : number   =  0; // Successive approximation bit position high
+  private a_l : number   =  0; // Successive approximation bit position low or point transform.
+
+  constructor(buffer: Uint8Array) {
+    super('SOS - Start Of Scan', COMMON_MARKERS.SOS_MARKER, buffer);
+    this.decodeSync();
+  }
+
+  decodeSync(): void {
+    let position = 4; // Jump the marker segment length section
+    this.n_s = this.buffer.readUInt8(position++); // Take the number of triplets
+
+    for (let idx = 0; idx < this.n_s; idx++) {
+      this.c_s.push(this.buffer.readUInt8(position++)); // Take the component selector
+
+      // Take the DC and AC entropy coding table dest.
+      const [t_d, t_a] = SplitByte(this.buffer.readUInt8(position++))
+      this.t_d.push(t_d);
+      this.t_a.push(t_a);
+    }
+
+    this.s_s = this.buffer.readUInt8(position++);
+    this.s_e = this.buffer.readUInt8(position++);
+    [this.a_h, this.a_l] = SplitByte(this.buffer.readUInt8(position++));
+  }
+
+  override toString(): string {
+    const summary = super.toString();
+
+    const c_s_string = VectorToString(this.c_s, 20, '|');
+    const t_d_string = VectorToString(this.t_d, 20, '|');
+    const t_a_string = VectorToString(this.t_a, 20, '|');
+
+    const informations = (
+      `|  - Number of Image components in the Scan (N_s) : ${this.n_s}\n`   +
+      `|  - Scan component Selectors (C_s)               : ${c_s_string}\n` +
+      `|  - DC entropy coding table destinations (T_d)   : ${t_d_string}\n` +
+      `|  - AC entropy coding table destinations (T_a)   : ${t_a_string}\n` +
+      `|  - Start of spectral (S_s)                      : ${this.s_s}\n`   +
+      `|  - End of spectral (S_e)                        : ${this.s_e}\n`   +
+      `|  - Succ. approximation bit position high (A_h)  : ${this.a_h}\n`   +
+      `|  - Succ. approximation bit position low (A_l)   : ${this.a_l}`
+    );
+
+    return summary + '\n' + informations;
+  }
+};
+
+class JPEG_TableSection implements Printable {
+  private dqt_markers : DQTAggregation; // An Aggregation of DQT Markers
+  private dht_markers : DHTAggregation; // An Aggregation of DHT Markers
+
+  constructor() {
+    this.dqt_markers = new DQTAggregation();
+    this.dht_markers = new DHTAggregation();
+  }
+
+  /**
+   * Check the input marker code and determines if it is for a table definition
+   * or not. If it is not, then it returns 0 otherwise the number of read bytes.
+   */
+  decodeTables(marker_code: number, buffer: Buffer) : number {
+    // If the current marker defines a quantization table
+    if (marker_code === COMMON_MARKERS.DQT_MARKER) return this.dqt_markers.addMarker(buffer);
+
+    // If the current marker defines a huffman table
+    if (marker_code === COMMON_MARKERS.DHT_MARKER) return this.dht_markers.addMarker(buffer);
+
+    return 0;
+  }
+
+  toString(): string {
+    return '';
+  }
+}
+
+class JPEG_Scan extends AsyncDecodable implements Printable {
+  private buffer     : Buffer;                       // The byte buffer with the scan subsection
+  private position   : number;                       // The current position inside the buffer
+  private sos_marker : JPEG_SOSMarker | null = null; // The start of Scan Marker
+  private tables     : JPEG_TableSection;            // The section with all tables
+
+  private ecs : number[][] = []; // A collection of Entropy coded segments
+
+  constructor(buffer: Buffer, tables: JPEG_TableSection) {
+    super();
+    this.buffer = buffer;
+    this.tables = tables;
+    this.position = 0;
+    this.decodeSync();
+  }
+
+  getCurrentPosition() : number { return this.position; }
+
+  decodeSync(): void {
+    // Initialize the vector that will contains the i-th ECS values
+    const current_ecs_values : number[] = [];
+    
+    while (this.position < this.buffer.length) {
+      const curr_marker = this.buffer.readUInt16BE(this.position); // Take the current marker
+      const sub_buffer = this.buffer.subarray(this.position);
+
+      // We stop only if we encounter either an EOI marker and the current position
+      // is two bytes from the end of the buffer, or if we found either a DNL segment
+      // or the start of another SOS given that we have already found one
+      if (curr_marker === COMMON_MARKERS.EOI_MARKER && this.position === this.buffer.length - 2) break;
+      if (curr_marker === COMMON_MARKERS.SOS_MARKER && this.sos_marker !== null) break;
+      if (curr_marker === COMMON_MARKERS.DNL_MARKER) break;
+
+      // Check for table decoding
+      if (this.tables.decodeTables(curr_marker, sub_buffer) > 0) continue;
+
+      // If the current marker defines a Start Of Scan marker (required)
+      if (curr_marker === COMMON_MARKERS.SOS_MARKER) {
+        this.sos_marker = new JPEG_SOSMarker(sub_buffer);
+        this.position += this.sos_marker.markerLength;
+      }
+
+      current_ecs_values.push(curr_marker);
+      this.position++;
+    }
+
+    // We need to validate the decoding, in particular the SOS marker
+    // have to be different than null value
+    if (!this.sos_marker) {
+      throw new Error('JPEG_Scan:decodeSync:SosMarkerAbsent');
+    }
+  }
+
+  toString(): string {
+    return '';
+  }
+};
+
+class JPEG_Frame extends AsyncDecodable implements Printable {
+  private buffer     : Buffer; // The byte buffer with the image subsection
+  private position   : number; // The current position into the buffer
+  private sof_marker : JPEG_SOFnMarker | null = null; // The Start Of Frame Marker
+  private tables     : JPEG_TableSection; // All the tables defined for the frame
+  private scans      : JPEG_Scan[] = []; // All the scans contained in the frame
   
+  constructor(buffer: Buffer) {
+    super();
+    this.buffer = buffer;
+    this.position = 0;
+    this.tables = new JPEG_TableSection();
+    this.decodeSync();
+  }
+
+  getCurrentPosition() : number { return this.position; }
+
+  decodeSync(): void {
+    // We need to loop until we find the EOI marker
+    while (this.buffer.readUInt16BE(this.position) !== COMMON_MARKERS.EOI_MARKER) {
+      const curr_marker = this.buffer.readUInt16BE(this.position); // Take the current marker
+      const sub_buffer = this.buffer.subarray(this.position);
+
+      // Check for table decoding
+      const bytesRead = this.tables.decodeTables(curr_marker, sub_buffer);
+      if (bytesRead > 0) {
+        this.position += bytesRead;
+        continue;
+      }
+
+      // SOF Marker should starts with 0xFFCx, then we must identifies if the x values
+      // is not equal neither to 4 nor to C, which correspond to DHT and DAC tables respectively.
+      const partial_marker = curr_marker >> 4;
+      const last_values = curr_marker & ~(partial_marker << 4);
+      if (partial_marker === 0xFFC && last_values !== 4 && last_values !== 0xC) {
+        this.sof_marker = new JPEG_SOFnMarker(this.buffer.subarray(this.position), curr_marker);
+        this.position += this.sof_marker.markerLength;
+        continue;
+      }
+
+      if (curr_marker === COMMON_MARKERS.SOS_MARKER) {
+        const current_scan = new JPEG_Scan(sub_buffer, this.tables);
+        this.scans.push(current_scan);
+        this.position += current_scan.getCurrentPosition();
+        continue;
+      }
+    }
+  }
+
+  toString(): string {
+    return '';
+  }
+}
+
+class JFIF_CompressedImageData extends AsyncDecodable implements Printable {
+  private buffer   : Buffer;           // The buffer of bytes with the image
+  private image    : number[][] = [];  // Will contains the image data
+  private position : number     =  0;  // The current position inside the buffer
+
   // ---------------------- Marker Section ----------------------
+  /**
+   * This are the markers that are on top of image subsection. In particular the complete
+   * structure should be: SOI, APP0, Frame, EOI
+   */
   private soi_marker  : JPEG_SOIMarker  | null = null; // The Start Of Image Marker
   private app0_marker : JPEG_APP0Marker | null = null; // The Application0 (for JFIF) Marker
   private eoi_marker  : JPEG_EOIMarker  | null = null; // The End Of Image Marker
-  private sof_marker  : JPEG_SOFnMarker | null = null; // The Start Of Frame Marker
-
-  private dqt_markers : DQTAggregation  | null = new DQTAggregation(); // An Aggregation of DQT Markers
-  private dht_markers : DHTAggregation  | null = new DHTAggregation(); // An Aggregation of DHT Markers
   // ------------------------------------------------------------
+
+  private frame: JPEG_Frame | null = null; // The inner frame of the image
+
+  constructor(buffer: Buffer) {
+    super();
+    this.buffer = buffer;
+  }
+
+  public get imageData() : number[][] { return this.image; }
+
+  resetPosition() { this.position = 0; }
+
+  private parseImageBytes() {
+    // First, we need to reset the position in the image data decoding
+    this.resetPosition();
+
+    // Then we can start decoding the first two markers: SOI and APP0.
+    this.soi_marker = new JPEG_SOIMarker(this.buffer.subarray(this.position));
+    this.position += this.soi_marker.markerLength; // We need also to update the position
+    this.app0_marker = new JPEG_APP0Marker(this.buffer.subarray(this.position));
+    this.position += this.app0_marker.markerLength;
+
+    // Decode the image frame
+    const frame_buffer = this.buffer.subarray(this.position);
+    this.frame = new JPEG_Frame(frame_buffer);
+    this.position += this.frame.getCurrentPosition();
+
+    // Finally, there must also be the End Of Image marker at the end of the buffer
+    this.eoi_marker = new JPEG_EOIMarker(this.buffer.subarray(this.position));
+  }
+
+  decodeSync(): void {
+    // First we need to parse the image bytes so that to obtains all
+    // the marker segments specifications, entropy coded data and
+    // quantization, Huffman or arithmetic tables for decoding.
+    this.parseImageBytes();
+  }
+
+  decode(): Promise<void> {
+    throw Error("JPG_CompressedImageData:decode:NotImplementedYet");
+  }
+
+  toString(): string {
+    return (
+      `${this.soi_marker?.toString()}\n`  +
+      `${this.app0_marker?.toString()}\n` +
+      `${this.eoi_marker?.toString()}`
+    );
+  }
+}
+
+class JFIFImageDecoder implements Decodable {
+  private buffer   : Buffer;      // The buffer of bytes with the image
+  private ready    : boolean;     // True, whenever image data are ready
+  private error    : boolean;     // If the input buffer is invalid is True
+  
+  private image_data : JFIF_CompressedImageData | null = null;
 
   static isValidJFIF(buffer: Buffer): boolean {
     // Check if the input buffer contains a valid JFIF image
@@ -524,17 +793,14 @@ class JFIFImageDecoder implements Decodable {
 
   constructor (buffer: ArrayBuffer) {
     this.buffer = Buffer.from(buffer);
-    this.image = [];
     this.ready = false;
     this.error = false;
-    this.position = 0;
   }
 
   public get isDataReady() : boolean { return this.ready || this.error; }
   public get isError() : boolean { return this.error; }
-  public get imageData() : number[][] { return this.image; }
-
-  resetPosition() { this.position = 0; }
+  
+  getImage() : number[][] { return this.image_data?.imageData ?? []; }
 
   decodeSync(): void {
     // First we need to check if the buffer is a valid
@@ -547,53 +813,9 @@ class JFIFImageDecoder implements Decodable {
       return;
     }
 
-    // First we are 100% sure that the first marker will be a SOI marker
-    this.soi_marker = new JPEG_SOIMarker(this.buffer.subarray(this.position, this.position + 2));
-    this.position += 2; // We need also to update the position
-    console.log(this.soi_marker.toString());
-
-    // Then a required APP0 marker segment must be present in the bytes
-    // as conformed by the JFIF Reference Document.
-    const app0_length = this.buffer.readUInt16BE(this.position + 2);
-    this.app0_marker = new JPEG_APP0Marker(this.buffer.subarray(
-      this.position, this.position + app0_length + 2));
-
-    this.position += this.app0_marker.markerLength;
-    console.log(this.app0_marker.toString());
-
-    // From now on, there is no requirements on which marker is present
-    // For this reason, we should loop until the EOI is not reached.
-    while (this.eoi_marker === null) {
-      const curr_marker = this.buffer.readUInt16BE(this.position);
-
-      if (curr_marker === COMMON_MARKERS.DQT_MARKER) {
-        const bytesRead = this.dqt_markers!.addMarker(this.buffer.subarray(this.position));
-        this.position += bytesRead;
-        continue;
-      }
-
-      // SOF Marker should starts with 0xFFCx, then we must identifies if the x values
-      // is not equal neither to 4 nor to C, which correspond to DHT and DAC tables respectively.
-      const partial_marker = curr_marker >> 4;
-      const last_values = curr_marker & ~(partial_marker << 4);
-      if (partial_marker === 0xFFC && last_values !== 4 && last_values !== 0xC) {
-        this.sof_marker = new JPEG_SOFnMarker(this.buffer.subarray(this.position), curr_marker);
-        this.position += this.sof_marker.markerLength;
-      }
-
-      if (curr_marker === COMMON_MARKERS.DHT_MARKER) {
-        const bytesRead = this.dht_markers!.addMarker(this.buffer.subarray(this.position));
-        this.position += bytesRead;
-        continue;
-      }
-
-      if (curr_marker === 0xFFDA) {
-        console.log(this.dqt_markers!.toString());
-        console.log(this.sof_marker!.toString());
-        console.log(this.dht_markers!.toString());
-        break;
-      }
-    }
+    this.image_data = new JFIF_CompressedImageData(this.buffer);
+    this.image_data.decodeSync();
+    console.log(this.image_data.toString());
 
     this.ready = true; // Set the ready variable to true
   }
