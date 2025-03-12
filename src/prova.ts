@@ -34,10 +34,10 @@ const VectorToString = (values: number[], x_dim: number, line_prefix: string) : 
   return string_result + ']';
 }
 
-const SplitByte = (value: number) : [number, number] => 
+const SplitByte = (value: number, size: number=4) : [number, number] => 
 {
-  const value1 = value >> 4;
-  const value2 = value & ~(value1 << 4);
+  const value1 = value >> size;
+  const value2 = value & ~(value1 << size);
   return [value1, value2];
 }
 
@@ -133,8 +133,12 @@ class MarkerAggregator<T extends JPG_TableMarker> implements Printable {
 
   public get nofMarkers() : number { return this.size; }
   
-  public getMarker(destination: number) : T {
-    return this.markers[destination];
+  /**
+   * @throws Error If the input identifier is not a key in the record.
+   */
+  public getMarker(identifier: number) : T {
+    if (!(identifier in this.markers)) throw new Error('getMarker:NoSuchRecordKey');
+    return this.markers[identifier];
   }
 
   toString(): string {
@@ -342,6 +346,13 @@ class JPEG_DHTMarker extends JPGMarker {
   private l_i  : number[]   = []; // Number of Huffman codes of length i
   private v_ij : number[][] = []; // Values associated with each Huffman code
 
+  private huff_size: number[] = []; // Contains a list of code lenghts
+  private huff_code: number[] = []; // Containes the Huffman codes corresponding to those lengths
+
+  private mincode : number[] = []; // Contains the smallest code value for each code length
+  private maxcode : number[] = []; // Contains the largest code value for each code length
+  private valptr  : number[] = []; // Contains the start idx of the list of values decoded for each code length
+
   constructor(buffer: Uint8Array) {
     super('DHT - Define Huffman Table', COMMON_MARKERS.DHT_MARKER, buffer);
     this.decodeSync();
@@ -349,6 +360,88 @@ class JPEG_DHTMarker extends JPGMarker {
 
   public get destination() : number { return this.t_h; }
   public get identifier() : number { return (this.t_c << 4) + this.t_h; }
+  
+  getMincodeValue(index: number) : number { return this.mincode[index]; }
+  getMaxcodeValue(index: number) : number { return this.maxcode[index]; }
+  getValptrValue(index: number)  : number { return this.valptr[index];  }
+
+  getHuffValue(i: number, j: number) : number { return this.v_ij[i][j]; }
+
+  /**
+   * The HUFFSIZE list represents the lengths of Huffman codes in increasing order,
+   * where each element in the list corresponds to the number of bits used to
+   * encode a symbol. In particular, while the BITS[i] list tells us how many codes
+   * exists for bit-length (i+1), the HUFFSIZE list explicitly lists those code
+   * lengths in order.
+   */
+  private genHuffsizeTable() {
+    let bits_index = 0;  // The index that will loop the Li list (also called BITS)
+    let curr_length = 1; // The current code length
+
+    while (bits_index < this.l_i.length) {
+      if (curr_length <= this.l_i[bits_index]) {
+        this.huff_size.push((bits_index + 1));
+        curr_length++;
+        continue;
+      }
+
+      bits_index++;
+      curr_length = 1;
+    }
+
+    this.huff_size.push(0);
+  }
+
+  /**
+   * This table stores the actual Huffman codes assigned to symbols. Codes are generated
+   * sequentially, following Huffman's canonical ordering. 
+   */
+  private genHuffcodeTable() {
+    let k_index = 0;
+    let code = 0;
+
+    // Iterate over possible Huffman code lengths (1 to 16 bits)
+    for (let size = 1; size <= 16; size++) {
+      // Assign codes for each symbol of the current bit length
+      while (k_index < this.huff_size.length && this.huff_size[k_index] === size) {
+          this.huff_code[k_index] = code;
+          code++;
+          k_index++;
+      }
+
+      // Shift `code` left when moving to the next bit length
+      code <<= 1;
+    }
+  }
+
+  /**
+   * This function will generates three tables using when decoding both 8-bits
+   * DC and AC coefficients: MINCODE, MAXCODE and VALPTR tables. The MINCODE
+   * table contains 16 values each specifying the smallest possible code value
+   * for each code length. The MAXCODE table contains 16 values specifying the
+   * largest code value for each code length. The VALPTR table, at position i,
+   * contains the index to the start of the list of values in HUFFVAL which are
+   * decoded by code words of length i.
+   */
+  private genDecodeTables() {
+    let [i_index, j_index] = [0, 0];
+    while (i_index < this.l_i.length) {
+      if (this.l_i[i_index] === 0) {
+        // The values in MINCODE and MAXCODE are signed 16-bit integer,
+        // therefore, a value of -1 sets all of the bits.
+        this.maxcode.push(-1);
+        this.mincode.push(-1);
+      } else {
+        this.valptr.push(j_index);
+        this.mincode.push(this.huff_code[j_index]);
+        j_index = j_index + this.l_i[i_index] - 1;
+        this.maxcode.push(this.huff_code[j_index]);
+        j_index++;
+      }
+
+      i_index++;
+    }
+  }
 
   decodeSync(): void {
     let position = 0; // Skips the length bytes
@@ -359,6 +452,11 @@ class JPEG_DHTMarker extends JPGMarker {
       this.l_i.push(this.buffer.readUInt8(position++));
       total_len += this.l_i[idx];
     }
+
+    // Final, we need to generate two more tables HUFFSIZE and HUFFCODE
+    this.genHuffsizeTable();
+    this.genHuffcodeTable();
+    this.genDecodeTables(); // We also need to generate decode tables
 
     // Read the values associated with each Huffman code
     for (const i_size of this.l_i) {
@@ -386,8 +484,8 @@ class JPEG_DHTMarker extends JPGMarker {
     };
 
     const t_class = table_class_map[this.t_c];
-    const spaces = ' '.repeat(28);
-    const v_spaces = ' '.repeat(32);
+    const spaces = ' '.repeat(33);
+    const v_spaces = ' '.repeat(37);
 
     let values_str = '[\n';
     for (const v_i of this.v_ij) {
@@ -397,10 +495,15 @@ class JPEG_DHTMarker extends JPGMarker {
     values_str += '|' + spaces + ']';
 
     const informations = (
-      `|  - Table Class           : ${this.t_c} (${t_class})\n`                      +
-      `|  - Table Destination     : ${this.t_h}\n`                                   +
-      `|  - Huffman Codes Lengths : ${VectorToString(this.l_i, 20, '|' + spaces)}\n` +
-      `|  - Huffman Values        : ${values_str}`
+      `|  - Table Class                  : ${this.t_c} (${t_class})\n`                            +
+      `|  - Table Destination            : ${this.t_h}\n`                                         +
+      `|  - Huffman Codes Lengths (BITS) : ${VectorToString(this.l_i, 20, '|' + spaces)}\n`       +
+      `|  - Huffman Values     (HUFFVAL) : ${values_str}\n`                                       +
+      `|  - Generated HUFFSIZE array     : ${VectorToString(this.huff_size, 20, '|' + spaces)}\n` +
+      `|  - Generated HUFFCODE array     : ${VectorToString(this.huff_code, 20, '|' + spaces)}\n` +
+      `|  - Generated MINCODE  array     : ${VectorToString(this.mincode, 20, '|' + spaces)}\n`   +
+      `|  - Generated MAXCODE  array     : ${VectorToString(this.maxcode, 20, '|' + spaces)}\n`   +
+      `|  - Generated VALPTR   array     : ${VectorToString(this.valptr, 20, '|' + spaces)}`
     );
 
     return summary + '\n' + informations;
@@ -485,6 +588,16 @@ class JPEG_SOFnMarker extends JPGMarker {
     }
   }
 
+  /**
+   * Compute and returns the number of MCUs.
+   */
+  getMCUCount() : number {
+    const h_max_sampling = Math.max(...this.h_i);
+    const v_max_sampling = Math.max(...this.v_i);
+    const mcu_size = [h_max_sampling * 8, v_max_sampling * 8];
+    return this.x / mcu_size[0] + this.y / mcu_size[1];
+  }
+
   override toString(): string {
     const summary = super.toString();
 
@@ -529,6 +642,10 @@ class JPEG_SOSMarker extends JPGMarker {
     super('SOS - Start Of Scan', COMMON_MARKERS.SOS_MARKER, buffer);
     this.decodeSync();
   }
+
+  getDCTableDestinations() : number[] { return this.t_d; }
+  getACTableDestinations() : number[] { return this.t_a; }
+  getNofComponents() : number { return this.n_s; }
 
   decodeSync(): void {
     let position = 4; // Jump the marker segment length section
@@ -579,6 +696,22 @@ class JPEG_TableSection implements Printable {
     this.dht_markers = new DHTAggregation();
   }
 
+  getQuantizedTable(destination: number) : JPEG_DQTMarker {
+    try {
+      return this.dqt_markers.getMarker(destination)
+    } catch (error) {
+      throw new Error('JPEG_TableSelection:getQuantizedTable:UninstalledDestination');
+    }
+  }
+
+  getHuffmanTable(destination: number) : JPEG_DHTMarker {
+    try {
+      return this.dht_markers.getMarker(destination)
+    } catch (error) {
+      throw new Error('JPEG_TableSelection:getHuffmanTable:UninstalledDestination');
+    }
+  }
+
   /**
    * Check the input marker code and determines if it is for a table definition
    * or not. If it is not, then it returns 0 otherwise the number of read bytes.
@@ -594,7 +727,200 @@ class JPEG_TableSection implements Printable {
   }
 
   toString(): string {
-    return '';
+    return (
+      `${this.dqt_markers.toString()}\n` +
+      `${this.dht_markers.toString()}`
+    );
+  }
+}
+
+abstract class ECS_Decoder extends AsyncDecodable {
+  protected buffer   : Buffer;          // The buffer containing the ECS section
+  protected position : number = -1;     // The current position into the buffer
+  protected mcu      : number[][] = [];
+
+  constructor(buffer: Buffer) {
+    super();
+    this.buffer = buffer;
+  }
+
+  abstract decodeDCCoefficients(component_idx: number) : number;
+  abstract decodeACCoefficients(component_idx: number) : number[];
+  abstract decodeSync(): void;
+  abstract resetState(): void;
+
+  getAllCoefficients() : number[][] { return this.mcu; }
+
+  getCoefficients(component_idx: number) : number[] {
+    if (component_idx >= this.mcu.length) {
+      throw new Error('[ECS_Decoder:getCoefficients:OverflowError] Not enough components.');
+    }
+
+    return this.mcu[component_idx];
+  }
+}
+
+class SequentialDCT_BaselineHuffmanDecoder extends ECS_Decoder {
+  private byteCounter  : number =  0; // The byte counter used for the NEXTBIT procedure
+  private currByte     : number =  0; // The current read byte
+
+  private tables  : JPEG_TableSection; // The collection of all tables (DQT, DAT, DHT)
+  private dc_dest : number[];          // DC Table destinations
+  private ac_dest : number[];          // AC Table destinations
+  private prev_dc : number[];          // Previous DC values for the DPCM
+
+  constructor(buffer: Buffer, tables: JPEG_TableSection, dc_t: number[], 
+      ac_t: number[], nc: number)
+  {
+    super(buffer);
+    this.tables = tables;
+    this.dc_dest = dc_t;
+    this.ac_dest = ac_t;
+    this.prev_dc = new Array(nc).fill(0);
+  }
+
+  /**
+   * EXTEND(DIFF, T) is a procedure which converts partially decoded DIFF value
+   * of precision T to the full precision difference.
+   */
+  private extend(diff: number, t: number) : number {
+    let v_t = (1 << (t - 1));
+
+    if (diff < v_t) {
+      return diff - (1 << t) + 1;
+    }
+
+    return diff;
+  }
+
+  /**
+   * The RECEIVE(SSSS) is a procedure which places the next SSSS bits of the ECS
+   * into the lower order bits of DIFF, MSB first. In order words, it extracts the 
+   * first SSSS bits from the remaining compressed data, MSB first.
+   */
+  private receive(ssss: number, buffer: Buffer) : number {
+    let value = 0;
+    for (let i = 0; i < ssss; i++) {
+        value = (value << 1) | this.nextbit(buffer);
+    }
+    return value;
+  }
+
+  /**
+   * The NEXTBIT procedure reads the next bit of compressed data and passes it
+   * to higher level routines. It also intercepts and removes stuff bytes and detect
+   * markers. NEXTBIT reads the bits of a byte starting with the MSB.
+   */
+  private nextbit(buffer: Buffer) : number {
+    if (this.byteCounter === 0) {
+      this.position++; // Update the position if counter = 0
+      const nextByte = buffer.readUInt8(this.position);
+      const nextByte_2 = buffer.readUInt8(this.position + 1);
+      this.byteCounter = 8;
+
+      // Check if the next byte is the start of a marker, i.e., 0xFF and if
+      // the byte immediatly after the FF is different from zero, meaning
+      // it is not a stuff zero byte code.
+      if (nextByte === 0xFF && nextByte_2 !== 0x00) {
+        this.position += 2;
+        return -1;
+      }
+
+      this.currByte = nextByte;
+    }
+
+    const bit = this.currByte >> 7;
+    this.byteCounter--;
+    this.currByte = (this.currByte << 1) & 0xFF;
+    return bit;
+  }
+
+  /**
+   * The DECODE procedure decodes an 8-bit value which, for DC coefficient,
+   * determines the difference magnitude category. For the AC coefficient
+   * this 8-bit value determines the zero run-length and non-zero coefficient
+   * category.
+   */
+  private decodeHuffman(buffer: Buffer, dht: JPEG_DHTMarker) : number {
+    let i_index = 0;
+    let currCode = this.nextbit(buffer);
+    
+    // We need to check that the current returned code is not -1.
+    // If it is, then we know it would corresponds to a DNL check true
+    if (currCode < 0) return -1;
+    while (currCode > dht.getMaxcodeValue(i_index)) {
+      i_index++; // Increase the current index
+      currCode = (currCode << 1) | this.nextbit(buffer);
+    }
+
+    let j_value = dht.getValptrValue(i_index);
+    j_value = j_value + currCode - dht.getMincodeValue(i_index);
+    return dht.getHuffValue(i_index, j_value);
+  }
+
+  override resetState(): void {
+    this.prev_dc.fill(0);
+    console.log('Resetting the internal state of the Decoder.');
+  }
+
+  /**
+   * Decode a single DC coefficient as specified in the official documentation
+   */
+  override decodeDCCoefficients(component_idx: number): number {
+    const dc_table = this.tables.getHuffmanTable(this.dc_dest[component_idx]);
+    const nofbits = this.decodeHuffman(this.buffer, dc_table);
+    let diff = this.receive(nofbits, this.buffer);
+    diff = this.extend(diff, nofbits);
+    const dc_coeff = this.prev_dc[component_idx] + diff;
+    this.prev_dc[component_idx] = dc_coeff;
+    return dc_coeff;
+  }
+
+  override decodeACCoefficients(component_idx: number): number[] {
+    // Initialize the AC coefficients vector with all zeros of size 63
+    const ac_coefficients: number[] = new Array(63).fill(0);
+    const ac_table = this.tables.getHuffmanTable((1 << 4) + this.ac_dest[component_idx]);
+    let k_value = 0;
+
+    while (k_value < ac_coefficients.length) {
+      const rs_value = this.decodeHuffman(this.buffer, ac_table);
+      const ssss = rs_value & 0xF; // Computes the last four bits of the RS value
+      const r = (rs_value >> 4) & 0xF; // Compute the first four bits of the RS value
+
+      if (ssss === 0 && r !== 15) break; // End of Block reached
+      if (ssss === 0) {
+        k_value = k_value + 16;
+        continue;
+      }
+
+      k_value += r;
+      const value = this.receive(ssss, this.buffer)
+      ac_coefficients[k_value] = this.extend(value, ssss);
+      k_value += 1;
+    }
+
+    return ac_coefficients;
+  }
+
+  override decodeSync(): void {
+    const nof_components = this.ac_dest.length; // Take the number of components
+
+    for (let c_idx = 0; c_idx < nof_components; c_idx++) {
+      const dc_coeff = this.decodeDCCoefficients(c_idx);
+      const ac_coeff = this.decodeACCoefficients(c_idx);
+      this.mcu.push([dc_coeff, ...ac_coeff]);
+
+      // We can check if the current pointed byte is a RST marker. We do
+      // it here since it is not possible that there is a RST marker not
+      // even starting decoding the ECS section.
+      const marker = this.buffer.readUInt16BE(this.position)
+      const [msb, lsb] = SplitByte(marker);
+      if (msb === 0xFF && (0xD0 <= lsb && lsb <= 0xD7)) {
+        this.resetState();
+        this.position += 2;
+        continue;
+      }
+    } 
   }
 }
 
@@ -603,18 +929,32 @@ class JPEG_Scan extends AsyncDecodable implements Printable {
   private position   : number;                       // The current position inside the buffer
   private sos_marker : JPEG_SOSMarker | null = null; // The start of Scan Marker
   private tables     : JPEG_TableSection;            // The section with all tables
+  private frame_hdr  : JPEG_SOFnMarker;              // The frame header marker
 
-  private ecs : number[][] = []; // A collection of Entropy coded segments
+  private ecs : Buffer | null = null; // A collection of Entropy coded segments
+  private mcu : number[][]    = [];   // The MCUs
 
-  constructor(buffer: Buffer, tables: JPEG_TableSection) {
+  constructor(buffer: Buffer, tables: JPEG_TableSection, frame: JPEG_SOFnMarker) {
     super();
     this.buffer = buffer;
     this.tables = tables;
+    this.frame_hdr = frame;
     this.position = 0;
     this.decodeSync();
   }
 
   getCurrentPosition() : number { return this.position; }
+
+  private decodeECSSection() {
+    const dc_dest = this.sos_marker?.getDCTableDestinations()!;
+    const ac_dest = this.sos_marker?.getACTableDestinations()!;
+    const nc = this.sos_marker?.getNofComponents()!;
+    const ecs_decoder = new SequentialDCT_BaselineHuffmanDecoder(
+      this.ecs!, this.tables, dc_dest, ac_dest, nc);
+    
+    ecs_decoder.decodeSync();
+    this.mcu = ecs_decoder.getAllCoefficients();
+  }
 
   decodeSync(): void {
     // Initialize the vector that will contains the i-th ECS values
@@ -638,11 +978,18 @@ class JPEG_Scan extends AsyncDecodable implements Printable {
       if (curr_marker === COMMON_MARKERS.SOS_MARKER) {
         this.sos_marker = new JPEG_SOSMarker(sub_buffer);
         this.position += this.sos_marker.markerLength;
+        continue;
       }
 
-      current_ecs_values.push(curr_marker);
+      const [value1, value2] = SplitByte(curr_marker, 8);
+      current_ecs_values.push(value1)
+      current_ecs_values.push(value2)
       this.position++;
     }
+
+    // Take the ECS section and decode it into DC and AC coefficients
+    this.ecs = Buffer.from(current_ecs_values);
+    this.decodeECSSection();
 
     // We need to validate the decoding, in particular the SOS marker
     // have to be different than null value
@@ -652,7 +999,7 @@ class JPEG_Scan extends AsyncDecodable implements Printable {
   }
 
   toString(): string {
-    return '';
+    return `${this.sos_marker?.toString()}`;
   }
 };
 
@@ -697,7 +1044,9 @@ class JPEG_Frame extends AsyncDecodable implements Printable {
       }
 
       if (curr_marker === COMMON_MARKERS.SOS_MARKER) {
-        const current_scan = new JPEG_Scan(sub_buffer, this.tables);
+        // Raise an error if the SOS marker has been found before the SOF marker.
+        if (!this.sof_marker) throw new Error('[JPEG_FRAME:decodeSync:SyntaxError] SOS Marker before SOF');
+        const current_scan = new JPEG_Scan(sub_buffer, this.tables, this.sof_marker);
         this.scans.push(current_scan);
         this.position += current_scan.getCurrentPosition();
         continue;
@@ -706,7 +1055,10 @@ class JPEG_Frame extends AsyncDecodable implements Printable {
   }
 
   toString(): string {
-    return '';
+    return (
+      `${this.sof_marker?.toString()}\n` +
+      `${this.tables.toString()}\n`
+    ) + (this.scans.map((x: JPEG_Scan) : string => x.toString()).join('\n'));
   }
 }
 
@@ -770,6 +1122,7 @@ class JFIF_CompressedImageData extends AsyncDecodable implements Printable {
     return (
       `${this.soi_marker?.toString()}\n`  +
       `${this.app0_marker?.toString()}\n` +
+      `${this.frame?.toString()}\n`       +
       `${this.eoi_marker?.toString()}`
     );
   }
